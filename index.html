@@ -1,0 +1,148 @@
+<html>
+<head>
+<meta charset="utf-8">
+<script type="text/javascript" src="d3.v5.min.js"></script>
+<script type="text/javascript" src="global.js"></script>
+<script type="text/javascript" src="hal.js"></script>
+<script type="text/javascript" src="ui.js"></script>
+<script type="text/javascript" src="parser.js"></script>
+<script type="text/javascript" src="verification.js"></script>
+<script type="text/javascript" src="main.js"></script>
+</head>
+<script type="text/javascript">
+
+window.onload = main;
+
+
+</script>
+
+
+<title>PA Parser</title>
+<style type='text/css'>
+    .Title {
+        background: green;
+    }
+    
+    .DarkBody{
+        background-color:black;
+        color:white;
+    }
+    
+    .myButton {
+        width:80%;
+        background-color:#44c767;
+        -moz-border-radius:28px;
+        -webkit-border-radius:28px;
+        border-radius:28px;
+        border:1px solid #18ab29;
+        display:inline-block;
+        cursor:pointer;
+        color:#ffffff;
+        font-family:Arial;
+        font-size:17px;
+        padding:16px 31px;
+        text-decoration:none;
+        text-shadow:0px 1px 0px #2f6627;
+    }
+    .myButton:hover {
+        background-color:#5cbf2a;
+    }
+    .myButton:active {
+        position:relative;
+        top:1px;
+    }
+    
+    passText {
+        color:blue;
+    }
+    
+    failText {
+        color:red;
+    }
+    
+    textarea {
+        width:100%;
+        height:50%;
+    }
+    
+    div{
+        text-align:center;
+    }
+    
+    #idProgress {
+      width: 100%;
+      background-color: #ddd;
+    }
+
+    #idStatusBar {
+      width: 1%;
+      height: 30px;
+      background-color: #4CAF50;
+    }
+    
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+    }
+
+    text {
+        font-family: arial;
+        font-size: 12px;
+    }
+
+
+    path.line {
+        fill: none;
+        stroke: red;
+        stroke-width: 3px;
+    }
+    
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: slategray;
+      shape-rendering: crispEdges;
+    }    
+
+</style>
+
+</head>
+<body class="DarkBody">
+    <p id="idTitle" class="Title">PA Parser</p>
+
+    <div><input type="file" id="idLoadFile" name="files[]" multiple class="myButton" /></div>
+    <div><output id="idOutput"></output></div>
+    
+    <div id="idProgress">
+        <div id="idStatusBar"></div>
+    </div>
+
+    <p></p>
+
+    <p id="idResultTitle" class="Title">Result : </p>
+    <p id="idResult"></p>
+
+    <p id="idLogTitle" class="Title">Log : </p>
+    
+    <p id="idLog"></p>
+    
+    <div id="idCmdDurationTitle"></div>
+    <div id="idDrawCmdDuration"></div>
+    <div id="idPartialResponseTitle"></div>
+    <div id="idDrawPartialResponse" ></div>
+    <p></p>
+    <p></p>
+    <p></p>
+    <div id="idSlumberResponseTitle"></div>
+    <div id="idDrawSlumberResponse" ></div>
+    <div id="idComwakeResponseTitle"></div>
+    <div id="idDrawComwakeResponse" ></div>
+    <div id="idComresetResponseTitle"></div>
+    <div id="idDrawComresetResponse" ></div>
+    <p></p>
+    <div><input id="idDownloadLog" type="button" value="Download Log" class="myButton"></input></div>
+</body>
+</html>
