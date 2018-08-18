@@ -183,8 +183,13 @@ function draw(sDrawID, sCSV)
         ;
 
     
-    err("Width:" + iDrawWidth + "_" + iWidth +",Heigth:" + iDrawHeight + "_" + iHeight);
-        
+    log("Width:" + iDrawWidth + "_" + iWidth +",Heigth:" + iDrawHeight + "_" + iHeight);
+    
+    // Define the div for the tooltip
+    var div = d3.select("body").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0);
+
     var svg = d3.select("#" + sDrawID).append("svg").attr("id","svg").attr("height", "100%").attr("width", "100%");
     
     
@@ -192,10 +197,8 @@ function draw(sDrawID, sCSV)
 
     chartGroup.append("path")
         .attr("class","line")
-        .attr("fill", "red")
         .attr("transform","translate(" + margin.left + "," + 0 + ")")
-        .attr("d",function(d){ return valueLine(rows); });
-        
+        .attr("d",function(d){ return valueLine(rows); }); 
     chartGroup.selectAll("dot")
         .data(rows)
         .enter().append("circle")
@@ -203,7 +206,21 @@ function draw(sDrawID, sCSV)
         .attr("r", 3.5)
         .attr("fill", "blue")
         .attr("cx", function(d) { return x(d.no); })
-        .attr("cy", function(d) { return y(d.value); });
+        .attr("cy", function(d) { return y(d.value); })
+        .on("mouseover", function(d) {		
+            err("mouseover");
+            div.transition()		
+                .duration(200)		
+                .style("opacity", .9);		
+            div	.html(d.no + "<br/>"  + d.value)	
+                .style("left", (d3.event.pageX) + "px")		
+                .style("top", (d3.event.pageY - 28) + "px");	
+            })					
+        .on("mouseout", function(d) {		
+            div.transition()		
+                .duration(500)		
+                .style("opacity", 0);	
+        });
 
     chartGroup.append("g")
         .attr("class","axis x")
@@ -228,7 +245,4 @@ function draw(sDrawID, sCSV)
       .attr("dy", ".71em")
       .style("text-anchor", "end")
       .text("No");;
-        
-    d3.selectAll("text").attr("fill", "green");
-        
 }
