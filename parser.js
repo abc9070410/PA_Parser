@@ -286,7 +286,8 @@ function buildCSV()
             {
                 if (isDeviceOOB(i+1) && isComwake(i+1))
                 {
-                    //log("");
+                    //log("COMWAKE:" + getClaim(i) + " -> " + getClaim(i+1));
+                    //log(getDurationUS(i, i+1) + " = " + getStartTime(i+1) + " - " + getEndTime(i));
                     addCSV(IDX_CSV_COMWAKE_RESPONSE, i, getDurationUS(i, i+1));
                 }
                 else
@@ -315,7 +316,7 @@ function buildCSV()
         {
             //log("CMD:" + getClaim(bNonNCQIdx) + " -> " + getClaim(i));
             //log(getDurationUS(bNonNCQIdx, i) + " = " + getStartTime(i) + " - " + getEndTime(bNonNCQIdx));
-            addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, i));
+            //addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, i));
             
             bNonNCQ = false;
         }

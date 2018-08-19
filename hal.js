@@ -52,7 +52,12 @@ function getEndTime(i)
 // time unit: us
 function getDurationUS(i, j)
 {
-    return Math.floor(getDuration(i, j) / 1000);
+    var iDuration = getDuration(i, j);
+
+    if (iDuration < 1000)
+        return iDuration / 1000;
+    else
+        return Math.floor(iDuration / 1000);
 }
 
 // get the duration time from i to j (time unit: ns) (j must bigger than i)
@@ -234,17 +239,27 @@ function getNumber(str, decOrHex)
     str = "" + str;
     str = str.trim().split(" ")[0]; // ex. " 12345 (s) " -> "12345"
 
-    var i;
-    for (i = 0; i <= str.length; i++)
+    var i = 0;
+    
+    if (str.indexOf("0.") == 0)
     {
-        if (str.substring(i, i+1).indexOf("0") != 0)
+        // ex. 0.123
+
+        return parseFloat(str);
+    }
+    else
+    {
+        // ex. 00123
+        for (i = 0; i <= str.length; i++)
         {
-            break;
+            if (str.substring(i, i+1).indexOf("0") != 0)
+            {
+                break;
+            }
         }
     }
     
     //log(i + ":" + str + "->" + str.substring(i, str.length) + "->" +  parseInt(str.substring(i, str.length), decOrHex));
-    
     return parseInt(str.substring(i, str.length), decOrHex);
 }
 
@@ -272,7 +287,7 @@ function getPAInfo(i)
     }
     else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB)
     {
-        return getOOBType(i);
+        return getOOBType(i).trim().split(" ")[0];
     }
 }
 
@@ -396,7 +411,7 @@ function getPrimitiveType(i)
         return "";
     }
     
-    return gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE];
+    return gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE];
 }
 
 function isPartial(i)
