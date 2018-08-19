@@ -229,6 +229,9 @@ function isReadWriteMultiple(i)
 // decOrHex: insert number 10 or 16
 function getNumber(str, decOrHex)
 {
+    //log(str);
+
+    str = "" + str;
     str = str.trim().split(" ")[0]; // ex. " 12345 (s) " -> "12345"
 
     var i;
@@ -245,11 +248,66 @@ function getNumber(str, decOrHex)
     return parseInt(str.substring(i, str.length), decOrHex);
 }
 
+function isString(myVar)
+{
+    return (typeof myVar === 'string' || myVar instanceof String)
+}
+
+// about parse
+
+function getClaimType(i)
+{
+    return gaasPASeq[i][IDX_PA_CLAIM_TYPE];
+}
+
+function getPAInfo(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS)
+    {
+        return getCmdInfo(i);
+    }
+    else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE)
+    {
+        return getPrimitiveType(i);
+    }
+    else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB)
+    {
+        return getOOBType(i);
+    }
+}
+
+function getCmdInfo(i)
+{
+    var sCmdOP = "" + getCmdOP(i);
+
+    for (var i = 0; i < AS_ATA_CMD_LIST.length; i++)
+    {
+        if (AS_ATA_CMD_LIST[i].indexOf(sCmdOP) > 0)
+        {
+            return AS_ATA_CMD_LIST[i];
+        }
+    }
+
+    return S_NOT_FOUND + ":" + sCmdOP;
+}
+
+// get CMD OP from CMD FIS
+function getCmdOP(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
+    {
+        err(i + " is not a CMD FIS");
+        return "";
+    }
+    
+    var j = gaasPASeq[i][IDX_PA_NO];
+    return gaasFISSeq[j][IDX_FIS_COMMAND].trim();
+}
+
 // get sectorCnt from CMD FIS
 function getSectorCnt(i)
 {
-    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS ||
-        gaasPASeq[i][IDX_FIS_COMMAND].indexOf("27") != 0)
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
     {
         err(i + " is not a CMD FIS");
         return 0;
@@ -295,90 +353,117 @@ function isPrimitiveType(str)
             str.indexOf("Target") >= 0);
 }
 
+function isLegalPAIdx(i)
+{
+    return (i >= 0 && i < giPAIndex);
+}
+
 function isHostOOB(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
-            gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB &&
-            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_PORT].indexOf("I1") >= 0);
+    return isLegalPAIdx(i) && 
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB &&
+           gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_PORT].indexOf("I1") >= 0;
 }
 
 function isDeviceOOB(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB &&
-            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_PORT].indexOf("T1") >= 0);
+            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_PORT].indexOf("T1") >= 0;
 }
 
 function isHostPrimitive(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
             (gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Host") >= 0 || 
-             gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Initiator") >= 0));
+             gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Initiator") >= 0);
 }
 
 function isDevicePrimitive(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
             (gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Device") >= 0 || 
-             gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Target") >= 0));
+             gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Target") >= 0);
+}
+
+function getPrimitiveType(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_PRIMITIVE)
+    {
+        err(i + " is not a primitive");
+        return "";
+    }
+    
+    return gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE];
 }
 
 function isPartial(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
-            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMREQ_P") >= 0);
+            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMREQ_P") >= 0;
 }
 
 function isSlumber(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
-            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMREQ_S") >= 0);
+            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMREQ_S") >= 0;
 }
 
 function isPMACK(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
-            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMACK") >= 0);
+            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMACK") >= 0;
 }
 
 function isPMNAK(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
-            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMNAK") >= 0);
+            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMNAK") >= 0;
 }
 
 function isPMREQ(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
-            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMREQ_") >= 0);
+            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMREQ_") >= 0;
+}
+
+function getOOBType(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_OOB)
+    {
+        err(i + " is not a OOB");
+        return "";
+    }
+    
+    return gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_TYPE];
 }
 
 function isCominit(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB &&
-            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_TYPE].indexOf("COMINIT") >= 0);
+            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_TYPE].indexOf("COMINIT") >= 0;
 }
 
 function isComwake(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB &&
-            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_TYPE].indexOf("COMWAKE") >= 0);
+            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_TYPE].indexOf("COMWAKE") >= 0;
 }
 
 function isComreset(i)
 {
-    return ((i >= 0 && i < giPAIndex) &&
+    return isLegalPAIdx(i) && 
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB &&
-            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_TYPE].indexOf("COMRESET") >= 0);
+            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_TYPE].indexOf("COMRESET") >= 0;
 }
 
 
@@ -389,7 +474,7 @@ function getClaimNo(i)
 
 function getClaim(i)
 {
-    return "" + gaasPASeq[i][IDX_PA_CLAIM_TYPE] + getClaimNo(i);
+    return "" + getClaimType(i) + getClaimNo(i);
 }
 
 
@@ -406,7 +491,7 @@ function setFailInfo(i, sMessage)
     giFailIdx = i;
 }
 
-
+// about veriables init
 
 function initPrimitive(i)
 {
@@ -476,11 +561,15 @@ function initPA(i, iSpecificType, iSpecificIdx, sLine)
 
 
 
+// about CSV
+
 function initCSV()
 {
     for (var i = 0; i < IDX_CSV_AMOUNT; i++)
     {
-        gasCSV[i] = "";
+        gasCSV[i] = "";     // store the parsed CSV string
+        gasCSVType[i] = ""; // store the CSV type(Link, Transport or ATA Cmd)
+        gaaiCSVPAIdx[i] = []; // store the original PA index 
     }
     
     log("init CSV done");
@@ -488,22 +577,33 @@ function initCSV()
 
 function addCSV(iCSVIdx, iNo, iValue)
 {
-    gasCSV[iCSVIdx] += "" + iNo + "," + iValue + "\n";
+    var i = getClaimNo(iNo);
+
+    if (gasCSVType[iCSVIdx] == "")
+    {
+        gasCSVType[iCSVIdx] = getClaim(iNo).split("" + i)[0];
+
+        log("Parsed Type:" + gasCSVType[iCSVIdx]);
+    }
+
+    gasCSV[iCSVIdx] += "" + i + "," + iValue + "\n";
+    gaaiCSVPAIdx[iCSVIdx][i] = iNo; // store the original PA idx
 }
 
-
+// about log
 
 function err(sText)
 {
     gsTempErrLog = sText;
     console.log("Err : " + gsTempErrLog);
+    console.trace();
 }
 
 function log(sText)
 {
-    //gsTempLog += "\r\n" + sText;
+    gsTempLog += "\r\n" + sText;
 
-    //console.log(sText);
+    console.log(sText);
     
     //document.getElementById("idLog").innerHTML += "<p></p>" + sText;
 }

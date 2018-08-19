@@ -275,7 +275,7 @@ function buildCSV()
             {
                 if (isDeviceOOB(i+1) && isCominit(i+1))
                 {
-                    addCSV(IDX_CSV_COMRESET_RESPONSE, getClaimNo(i), getDurationUS(i, i+1));
+                    addCSV(IDX_CSV_COMRESET_RESPONSE, i, getDurationUS(i, i+1));
                 }
                 else
                 {
@@ -286,7 +286,8 @@ function buildCSV()
             {
                 if (isDeviceOOB(i+1) && isComwake(i+1))
                 {
-                    addCSV(IDX_CSV_COMWAKE_RESPONSE, getClaimNo(i), getDurationUS(i, i+1));
+                    //log("");
+                    addCSV(IDX_CSV_COMWAKE_RESPONSE, i, getDurationUS(i, i+1));
                 }
                 else
                 {
@@ -312,13 +313,11 @@ function buildCSV()
         }
         else if (bNonNCQ && isD2HFIS(i))
         {
-            addCSV(IDX_CSV_CMD_DURATION, getClaimNo(bNonNCQIdx), getDurationUS(bNonNCQIdx, i));
+            //log("CMD:" + getClaim(bNonNCQIdx) + " -> " + getClaim(i));
+            //log(getDurationUS(bNonNCQIdx, i) + " = " + getStartTime(i) + " - " + getEndTime(bNonNCQIdx));
+            addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, i));
             
             bNonNCQ = false;
         }
     }
-    
-    log(gasCSV[IDX_CSV_CMD_DURATION]);
-    
-    log(gasCSV[IDX_CSV_COMRESET_RESPONSE]);
 }

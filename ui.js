@@ -109,25 +109,25 @@ function drawCSV()
     if (gasCSV[IDX_CSV_CMD_DURATION].length > 0)
     {
         document.getElementById("idCmdDurationTitle").innerHTML = "Cmd Duration Time (us)";
-        draw("idDrawCmdDuration", gasCSV[IDX_CSV_CMD_DURATION]);
+        drawSVG("idDrawCmdDuration", IDX_CSV_CMD_DURATION);
     }
     if (gasCSV[IDX_CSV_COMRESET_RESPONSE].length > 0)
     {
         document.getElementById("idComresetResponseTitle").innerHTML = "COMRESET Response Time (us)";
-        draw("idDrawComresetResponse", gasCSV[IDX_CSV_COMRESET_RESPONSE]);
+        drawSVG("idDrawComresetResponse", IDX_CSV_COMRESET_RESPONSE);
     }
     if (gasCSV[IDX_CSV_COMWAKE_RESPONSE].length > 0)
     {
         document.getElementById("idComwakeResponseTitle").innerHTML = "COMWAKE Response Time (us)";
-        draw("idDrawComwakeResponse", gasCSV[IDX_CSV_COMWAKE_RESPONSE]);
+        drawSVG("idDrawComwakeResponse", IDX_CSV_COMWAKE_RESPONSE);
     }
 }
 
 
 
-function draw(sDrawID, sCSV)
+function drawSVG(sDrawID, iCSVIdx)
 {
-    log("draw " + sDrawID + " length:" + sCSV.length);
+    log("draw " + sDrawID + " ID:" + iCSVIdx + " length:" + gasCSV[iCSVIdx].length);
     
     var iSpace = 40;
 
@@ -150,7 +150,7 @@ function draw(sDrawID, sCSV)
     var minNo;
     var maxNo;
 
-    var rows = d3.csvParseRows(sCSV, function(d, i) {
+    var rows = d3.csvParseRows(gasCSV[iCSVIdx], function(d, i) {
       return {
          no: Number(d[0]), 
          value: Number(d[1])
@@ -207,16 +207,29 @@ function draw(sDrawID, sCSV)
         .attr("fill", "blue")
         .attr("cx", function(d) { return x(d.no); })
         .attr("cy", function(d) { return y(d.value); })
-        .on("mouseover", function(d) {		
-            err("mouseover");
+        .on("mouseover", function(d) {
             div.transition()		
                 .duration(200)		
                 .style("opacity", .9);		
-            div	.html(d.no + "<br/>"  + d.value)	
+
+            var iTime = getNumber(d.value);
+            var sUnit = " us";
+            if (iTime > 1000)
+            {
+                iTime /= 1000;
+                sUnit = " ms";
+            }
+            
+            var iNo = getNumber(d.no);
+            var sInfo = getPAInfo(gaaiCSVPAIdx[iCSVIdx][iNo]) + "<br/>" +
+                        getClaimType(gaaiCSVPAIdx[iCSVIdx][iNo]) + iNo + "<br/>" +
+                        iTime + sUnit;
+
+            div	.html(sInfo)	
                 .style("left", (d3.event.pageX) + "px")		
                 .style("top", (d3.event.pageY - 28) + "px");	
             })					
-        .on("mouseout", function(d) {		
+        .on("mouseout", function(d) {
             div.transition()		
                 .duration(500)		
                 .style("opacity", 0);	
