@@ -258,6 +258,10 @@ function parseSequence()
     log("all " + giPAIndex + " PA parse done ");
 }
 
+function errCSV(iPAIdx, sMessage)
+{
+    err(getClaim(iPAIdx) + ":" + sMessage);
+}
 
 function buildCSV()
 {
@@ -279,7 +283,7 @@ function buildCSV()
                 }
                 else
                 {
-                    err("Host 發 COMRSET 之後 , 不是 Device 回 COMINIT");
+                    errCSV(i+1, "Host 發 COMRSET 之後 , 不是 Device 回 COMINIT");
                 }
             }
             else if (isComwake(i))
@@ -292,7 +296,32 @@ function buildCSV()
                 }
                 else
                 {
-                    err("Host 發 COMWAKE 之後 , 不是 Device 回 COMWAKE");
+                    errCSV(i+1, "Host 發 COMWAKE 之後 , 不是 Device 回 COMWAKE");
+                }
+            }
+        }
+        else if (isHostPrimitive(i))
+        {
+            if (isPartial(i))
+            {
+                if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
+                {
+                    addCSV(IDX_CSV_PARTIAL_RESPONSE, i, getDurationUS(i, i+1));
+                }
+                else
+                {
+                    errCSV(i+1, "Host 打 Partial 之後 , Device 並沒有接著回 ACK/NAK");
+                }
+            }
+            else if (isSlumber(i))
+            {
+                if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
+                {
+                    addCSV(IDX_CSV_SLUMBER_RESPONSE, i, getDurationUS(i, i+1));
+                }
+                else
+                {
+                    errCSV(i+1, "Host 打 Slumber 之後 , Device 並沒有接著回 ACK/NAK");
                 }
             }
         }
@@ -316,7 +345,7 @@ function buildCSV()
         {
             //log("CMD:" + getClaim(bNonNCQIdx) + " -> " + getClaim(i));
             //log(getDurationUS(bNonNCQIdx, i) + " = " + getStartTime(i) + " - " + getEndTime(bNonNCQIdx));
-            //addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, i));
+            addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, i));
             
             bNonNCQ = false;
         }

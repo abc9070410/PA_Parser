@@ -111,6 +111,16 @@ function drawCSV()
         document.getElementById("idCmdDurationTitle").innerHTML = "Cmd Duration Time (us)";
         drawSVG("idDrawCmdDuration", IDX_CSV_CMD_DURATION);
     }
+    if (gasCSV[IDX_CSV_PARTIAL_RESPONSE].length > 0)
+    {
+        document.getElementById("idPartialResponseTitle").innerHTML = "Partial Response Time (us)";
+        drawSVG("idDrawPartialResponse", IDX_CSV_PARTIAL_RESPONSE);
+    }
+    if (gasCSV[IDX_CSV_SLUMBER_RESPONSE].length > 0)
+    {
+        document.getElementById("idSlumberResponseTitle").innerHTML = "Slumber Response Time (us)";
+        drawSVG("idDrawSlumberResponse", IDX_CSV_SLUMBER_RESPONSE);
+    }
     if (gasCSV[IDX_CSV_COMRESET_RESPONSE].length > 0)
     {
         document.getElementById("idComresetResponseTitle").innerHTML = "COMRESET Response Time (us)";
@@ -121,6 +131,8 @@ function drawCSV()
         document.getElementById("idComwakeResponseTitle").innerHTML = "COMWAKE Response Time (us)";
         drawSVG("idDrawComwakeResponse", IDX_CSV_COMWAKE_RESPONSE);
     }
+
+
 }
 
 
