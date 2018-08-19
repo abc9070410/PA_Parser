@@ -260,6 +260,7 @@ function parseSequence()
 
 function errCSV(iPAIdx, sMessage)
 {
+    err(iPAIdx);
     err(getClaim(iPAIdx) + ":" + sMessage);
 }
 
@@ -281,7 +282,7 @@ function buildCSV()
                 {
                     addCSV(IDX_CSV_COMRESET_RESPONSE, i, getDurationUS(i, i+1));
                 }
-                else
+                else if ((i+1) < giPAIndex)
                 {
                     errCSV(i+1, "Host 發 COMRSET 之後 , 不是 Device 回 COMINIT");
                 }
@@ -294,7 +295,7 @@ function buildCSV()
                     //log(getDurationUS(i, i+1) + " = " + getStartTime(i+1) + " - " + getEndTime(i));
                     addCSV(IDX_CSV_COMWAKE_RESPONSE, i, getDurationUS(i, i+1));
                 }
-                else
+                else if ((i+1) < giPAIndex)
                 {
                     errCSV(i+1, "Host 發 COMWAKE 之後 , 不是 Device 回 COMWAKE");
                 }
@@ -308,7 +309,7 @@ function buildCSV()
                 {
                     addCSV(IDX_CSV_PARTIAL_RESPONSE, i, getDurationUS(i, i+1));
                 }
-                else
+                else if ((i+1) < giPAIndex)
                 {
                     errCSV(i+1, "Host 打 Partial 之後 , Device 並沒有接著回 ACK/NAK");
                 }
@@ -319,7 +320,7 @@ function buildCSV()
                 {
                     addCSV(IDX_CSV_SLUMBER_RESPONSE, i, getDurationUS(i, i+1));
                 }
-                else
+                else if ((i+1) < giPAIndex)
                 {
                     errCSV(i+1, "Host 打 Slumber 之後 , Device 並沒有接著回 ACK/NAK");
                 }

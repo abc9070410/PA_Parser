@@ -6,19 +6,70 @@ function getIdleTime(i, j)
     return getStartTime(j) - getEndTime(i);
 }
 
+function formatPATime(str)
+{
+    var iExpectPart = 0;
+    var iFirstPart;
+    var asTemp = str.split(/\./);
+
+    if (str.indexOf("(min)") > 0) // ex. 1.07.507.748.866 (min)
+    {
+        iExpectPart = 5;
+        iFirstPart = parseInt(asTemp[0]) * 60;
+    }
+    else if (str.indexOf("(s)") > 0) // ex. 10.350.990.220 (s)
+    {
+        iExpectPart = 4;
+        iFirstPart = parseInt(asTemp[0]);
+    }
+    else if (str.indexOf("(ms)") > 0) // ex. 1.007.706 (ms)
+    {
+        iExpectPart = 3;
+        iFirstPart = parseInt(asTemp[0]);
+    }
+    else if (str.indexOf("(us)") > 0) // ex. 2.060 (us)
+    {
+        iExpectPart = 2;
+        iFirstPart = parseInt(asTemp[0]);
+    }
+    else
+    {
+        return str.replace(/\./g, ""); // Duration time, not Start/End time
+    }
+
+    str = str.trim().split(" ")[0];
+    asTemp = str.split(/\./);
+
+    var newStr = "" + iFirstPart;    
+
+    for (var i = 1; i < asTemp.length; i++)
+    {
+        newStr += asTemp[i];
+    }
+
+    for (var i = asTemp.length; i < iExpectPart; i++)
+    {
+        newStr += "000";
+    }
+
+    //err(str + "->" +newStr);
+
+    return newStr;
+}
+
 function getStartTime(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE)
     {
-        return getNumber(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_START].replace(/\./g, ""), 10);
+        return getNumber(formatPATime(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_START]), 10);
     }
     else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS)
     {
-        return getNumber(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_START].replace(/\./g, ""), 10);
+        return getNumber(formatPATime(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_START]), 10);
     }
     else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB)
     {
-        return getNumber(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_START].replace(/\./g, ""), 10);
+        return getNumber(formatPATime(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_START]), 10);
     }
     else
     {
@@ -30,18 +81,18 @@ function getEndTime(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE)
     {
-        return getNumber(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_START].replace(/\./g, ""), 10) + 
-               getNumber(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_DURATION].replace(/\./g, ""), 10);
+        return getNumber(formatPATime(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_START]), 10) + 
+               getNumber(formatPATime(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_DURATION]), 10);
     }
     else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS)
     {
-        return getNumber(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_START].replace(/\./g, ""), 10) + 
-               getNumber(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_DURATION].replace(/\./g, ""), 10);
+        return getNumber(formatPATime(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_START]), 10) + 
+               getNumber(formatPATime(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_DURATION]), 10);
     }
     else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB)
     {
-        return getNumber(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_START].replace(/\./g, ""), 10) + 
-               getNumber(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_DURATION].replace(/\./g, ""), 10);
+        return getNumber(formatPATime(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_START]), 10) + 
+               getNumber(formatPATime(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_DURATION]), 10);
     }
     else
     {
@@ -611,14 +662,14 @@ function err(sText)
 {
     gsTempErrLog = sText;
     console.log("Err : " + gsTempErrLog);
-    console.trace();
+    //console.trace();
 }
 
 function log(sText)
 {
-    gsTempLog += "\r\n" + sText;
+    //gsTempLog += "\r\n" + sText;
 
-    console.log(sText);
+    //console.log(sText);
     
     //document.getElementById("idLog").innerHTML += "<p></p>" + sText;
 }
