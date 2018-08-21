@@ -207,13 +207,27 @@ function isDisableAutoActivate(i)
 function isNCQ(i)
 {
     return isH2DFIS(i) &&
-           (gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("60") == 0 || // READ FPDMA QUEUED
-            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("61") == 0);  // WRITE FPDMA QUEUED
+           (gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_COMMAND].indexOf("60") == 0 || // READ FPDMA QUEUED
+            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_COMMAND].indexOf("61") == 0);  // WRITE FPDMA QUEUED
 }
 
 function isNonNCQ(i)
 {
     return isH2DFIS(i) && !isNCQ(i); 
+}
+
+// ex. sectors=0x38(56) -> tag=56/8 = 7
+function getNCQTag(i)
+{
+	if (!isNCQ(i))
+	{
+		err(i + " is not a NCQ cmd FIS");
+		return 0;
+	}
+	
+	var iSectors = getSectorCnt(i);
+	
+	return (iSectors % 0xFF) / 8;
 }
 
 function isDataFIS(i)
@@ -234,6 +248,41 @@ function isDeviceFIS(i)
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_PORT].indexOf("T1") == 0;
 }
 
+function isSDBFIS(i)
+{
+    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+           gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("A1") == 0;
+}
+
+function getSActiveHex(i)
+{
+	if (!isSDBFIS(i))
+	{
+		err(i + " not a SDB FIS");
+		return 0;
+	}
+	
+	return gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_SACTIVE];
+}
+
+function getSActiveBin(i)
+{
+	var sSActiveHex = getSActiveHex(i);
+	
+	if (sSActiveHex == 0)
+	{
+		return 0;
+	}
+	
+	//err("HEX:[" +sSActiveHex + "] ");
+	
+	return "" + parseInt(sSActiveHex, 16).toString(2);
+}
+
+function isTagDone(sSActive, iTag)
+{
+	return sSActive.substring(iTag, iTag+1).indexOf("1") == 0;
+}
 
 function isPIOSetupFIS(i)
 {

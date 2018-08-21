@@ -271,6 +271,16 @@ function buildCSV()
     var bPIO = false;
     var bNonNCQ = false;
     var bNonNCQIdx = 0;
+	var bNCQ = true;
+	var iUndoneNCQIdx = [];
+	var iUndoneNCQTag = [];
+	var iUndoneNCQCnt = 0;
+	var iNCQIdx = [];
+	
+	for (var i = 0; i < 32; i++)
+	{
+		iNCQIdx[i] = -1;
+	}
 
     for (var i = 0; i < giPAIndex; i++)
     {
@@ -326,6 +336,46 @@ function buildCSV()
                 }
             }
         }
+		else if (isNCQ(i))
+		{
+			var iTag = getNCQTag(i);
+			
+			iNCQIdx[iTag] = i;
+			
+			//iUndoneNCQTag[iUndoneNCQCnt] = iTag;
+			//iUndoneNCQIdx[iUndoneNCQCnt] = i;
+			
+			iUndoneNCQCnt++;
+
+			log(getClaim(i) + " issued tag" + iTag + "(UndoneNCQ:" + iUndoneNCQCnt+ ")");
+		}
+		else if (isSDBFIS(i))
+		{
+			var sSActiveBin = getSActiveBin(i);
+			
+			log(getClaim(i) + " SACTIVE:" + sSActiveBin);
+			
+			for (var j = 0; j < 32; j++)
+			{
+				//err("->" + (1 << j).toString(2));
+				if (sSActiveBin == (1 << j).toString(2))
+				{
+					if (iNCQIdx[j] == -1)
+					{
+						err("TAG" + j + " 存在於 SACTIVE , 但之前沒有這個未完成 NCQ cmd");
+					}
+					else
+					{
+						addCSV(IDX_CSV_CMD_DURATION, iNCQIdx[j], getDurationUS(iNCQIdx[j], i));
+						
+						log("Match tag:" + j + "(idx:" + iNCQIdx[j] + ") , UndoneNCQ:" + iUndoneNCQCnt);
+						
+						iNCQIdx[j] = -1;
+						iUndoneNCQCnt--;
+					}
+				}
+			}
+		}
         else if (isNonNCQ(i))
         {
             bPIO = false; // init

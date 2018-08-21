@@ -66,7 +66,10 @@ var AS_ATA_CMD_LIST = [
 "WRITE MULTIPLE EXT - 39h, PIO data-out",
 "WRITE SECTOR(S) - 30h, PIO data-out",
 "WRITE STREAM DMA EXT - 3Ah, DMA",
-"WRITE STREAM EXT - 3Bh, PIO data-out"];
+"WRITE STREAM EXT - 3Bh, PIO data-out",
+"READ FPDMA QUEUED - 60H, DMA",
+"WRITE FPDMA QUEUED - 61H, DMA"
+];
 
 
 
@@ -121,9 +124,10 @@ var IDX_FIS_SECTORS = 5;
 var IDX_FIS_CONTROL = 6;
 var IDX_FIS_DEVICE = 7;
 var IDX_FIS_ERROR = 8;
+var IDX_FIS_SACTIVE = 9;
 //var IDX_FIS_C = 9;
 //var IDX_FIS_I = 10;
-var IDX_FIS_AMOUNT = 9;
+var IDX_FIS_AMOUNT = 10;
 
 var TAG_FIS = [
     ["FIS Type", IDX_FIS_TYPE],
@@ -134,7 +138,8 @@ var TAG_FIS = [
     ["Sector Count", IDX_FIS_SECTORS],
     ["Control", IDX_FIS_CONTROL],
     ["Device", IDX_FIS_DEVICE],
-    ["Error", IDX_FIS_ERROR]
+    ["Error", IDX_FIS_ERROR],
+	["SActive", IDX_FIS_SACTIVE]
     //["C", IDX_FIS_C],
     //["I", IDX_FIS_I]
 ];
