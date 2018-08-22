@@ -47,11 +47,11 @@ function parseFIS(asLineToken, iTextLineIdx)
             if (asTemp[0].indexOf(TAG_FIS[k][0]) == 0)
             {
                 var sBefore = gaasFISSeq[giFISIndex][TAG_FIS[k][1]];
-                gaasFISSeq[giFISIndex][TAG_FIS[k][1]] = asTemp[1];
+                gaasFISSeq[giFISIndex][TAG_FIS[k][1]] = asTemp[1].trim();
                 
                 if (sBefore && sBefore != "")
                 {
-                    gaasFISSeq[giFISIndex][TAG_FIS[k][1]] += sBefore;
+                    gaasFISSeq[giFISIndex][TAG_FIS[k][1]] += sBefore.trim();
                 }
 
                 log("match " + TAG_FIS[k][0] + " : " + TAG_FIS[k][1] + "," + gaasFISSeq[giFISIndex][TAG_FIS[k][1]]);
@@ -271,7 +271,7 @@ function buildCSV()
     var bPIO = false;
     var bNonNCQ = false;
     var bNonNCQIdx = 0;
-	var bNCQ = true;
+	var bNCQ = false;
 	var iUndoneNCQIdx = [];
 	var iUndoneNCQTag = [];
 	var iUndoneNCQCnt = 0;
@@ -340,6 +340,8 @@ function buildCSV()
 		{
 			var iTag = getNCQTag(i);
 			
+			bNCQ = true;
+			
 			iNCQIdx[iTag] = i;
 			
 			//iUndoneNCQTag[iUndoneNCQCnt] = iTag;
@@ -362,7 +364,7 @@ function buildCSV()
 				{
 					if (iNCQIdx[j] == -1)
 					{
-						err("TAG" + j + " 存在於 SACTIVE , 但之前沒有這個未完成 NCQ cmd");
+						err(getClaim(i) + ": TAG" + j + " 存在於 SACTIVE , 但之前沒有這個未完成 NCQ cmd");
 					}
 					else
 					{
@@ -382,6 +384,20 @@ function buildCSV()
             
             bNonNCQ = true;
             bNonNCQIdx = i;
+
+			if (bNCQ)
+			{
+				for (var j = 0; j < 32; j++)
+				{
+					if (iNCQIdx[j] >= 0)
+					{
+						addCSV(IDX_CSV_CMD_DURATION, iNCQIdx[j], -1000);
+						
+						err(getClaim(iNCQIdx[j]) + " 沒有相對應的 SDB FIS");
+					}
+				}
+				bNCQ = false;
+			}
         }
         else if (isPIOSetupFIS(i))
         {

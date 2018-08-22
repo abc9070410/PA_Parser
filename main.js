@@ -123,7 +123,7 @@ function parseText()
 {
     parseSequence();
 
-    checkVerification();
+    //checkVerification();
     doStatistics();
     
     moveStatusBar(100);

@@ -217,3 +217,5 @@ var IDX_CSV_AMOUNT = 5;
 var gasCSV = [];
 var gasCSVType = [];
 var gaaiCSVPAIdx = [];
+
+var gbEnableLog = false;

@@ -216,6 +216,23 @@ function isNonNCQ(i)
     return isH2DFIS(i) && !isNCQ(i); 
 }
 
+// get sector count of NCQ or non-NCQ cmd
+function getTransferLength(i)
+{
+	if (isNCQ(i))
+	{
+		return getFeature(i);
+	}
+	else if (isNonNCQ(i))
+	{
+		return getSectorCnt(i);
+	}
+	else
+	{
+		err(getClaim(i) + " 不是 NCQ cmd 也不是 non-NCQ cmd");
+	}
+}
+
 // ex. sectors=0x38(56) -> tag=56/8 = 7
 function getNCQTag(i)
 {
@@ -379,7 +396,7 @@ function getPAInfo(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS)
     {
-        return getCmdInfo(i);
+        return getCmdInfo(i) + " (" + (getTransferLength(i) / 2) + "KB)";
     }
     else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE)
     {
@@ -430,6 +447,18 @@ function getSectorCnt(i)
     
     var j = gaasPASeq[i][IDX_PA_NO];
     return getNumber(gaasFISSeq[j][IDX_FIS_SECTORS], 16);
+}
+
+function getFeature(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
+    {
+        err(i + " is not a CMD FIS");
+        return 0;
+    }
+    
+    var j = gaasPASeq[i][IDX_PA_NO];
+    return getNumber(gaasFISSeq[j][IDX_FIS_FEATURE], 16);
 }
 
 function isSetMultiple(i)
@@ -717,9 +746,10 @@ function err(sText)
 function log(sText)
 {
     //gsTempLog += "\r\n" + sText;
-
-    //console.log(sText);
-    
+	if (gbEnableLog)
+	{
+		console.log(sText);
+    }
     //document.getElementById("idLog").innerHTML += "<p></p>" + sText;
 }
 
