@@ -114,8 +114,15 @@ function getDurationUS(i, j)
 // get the duration time from i to j (time unit: ns) (j must bigger than i)
 function getDuration(i, j)
 {
-    //log("getD:" + getStartTime(j) + " - " + getEndTime(i));
-    return getStartTime(j) - getEndTime(i);
+    if (isOOB(i))
+    {
+        return getStartTime(j) - getStartTime(i);
+    }
+    else
+    {
+        //log("getD:" + getStartTime(j) + " - " + getEndTime(i));
+        return getStartTime(j) - getEndTime(i);
+    }
 }
 
 function isEnableDIPM(i)
@@ -217,34 +224,43 @@ function isNonNCQ(i)
 }
 
 // get sector count of NCQ or non-NCQ cmd
-function getTransferLength(i)
+function getTransferKB(i)
 {
-	if (isNCQ(i))
-	{
-		return getFeature(i);
-	}
-	else if (isNonNCQ(i))
-	{
-		return getSectorCnt(i);
-	}
-	else
-	{
-		err(getClaim(i) + " 不是 NCQ cmd 也不是 non-NCQ cmd");
-	}
+    var iSectorCnt = 0;
+    
+    if (isNCQ(i))
+    {
+        iSectorCnt = getFeature(i);
+    }
+    else if (isNonNCQ(i))
+    {
+        iSectorCnt = getSectorCnt(i);
+    }
+    else
+    {
+        err(getClaim(i) + " 不是 NCQ cmd 也不是 non-NCQ cmd");
+    }
+    
+    if (iSectorCnt == 0)
+    {
+        return 0;
+    }
+    
+    return iSectorCnt / 2;
 }
 
 // ex. sectors=0x38(56) -> tag=56/8 = 7
 function getNCQTag(i)
 {
-	if (!isNCQ(i))
-	{
-		err(i + " is not a NCQ cmd FIS");
-		return 0;
-	}
-	
-	var iSectors = getSectorCnt(i);
-	
-	return (iSectors % 0xFF) / 8;
+    if (!isNCQ(i))
+    {
+        err(i + " is not a NCQ cmd FIS");
+        return 0;
+    }
+    
+    var iSectors = getSectorCnt(i);
+    
+    return (iSectors % 0xFF) / 8;
 }
 
 function isDataFIS(i)
@@ -273,32 +289,52 @@ function isSDBFIS(i)
 
 function getSActiveHex(i)
 {
-	if (!isSDBFIS(i))
-	{
-		err(i + " not a SDB FIS");
-		return 0;
-	}
-	
-	return gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_SACTIVE];
+    if (!isSDBFIS(i))
+    {
+        err(i + " not a SDB FIS");
+        return 0;
+    }
+    
+    return gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_SACTIVE];
 }
 
 function getSActiveBin(i)
 {
-	var sSActiveHex = getSActiveHex(i);
-	
-	if (sSActiveHex == 0)
-	{
-		return 0;
-	}
-	
-	//err("HEX:[" +sSActiveHex + "] ");
-	
-	return "" + parseInt(sSActiveHex, 16).toString(2);
+    var sSActiveHex = getSActiveHex(i);
+    
+    if (sSActiveHex == 0)
+    {
+        return 0;
+    }
+    
+    //err("HEX:[" +sSActiveHex + "] ");
+    
+    return "" + parseInt(sSActiveHex, 16).toString(2);
 }
 
 function isTagDone(sSActive, iTag)
 {
-	return sSActive.substring(iTag, iTag+1).indexOf("1") == 0;
+    return sSActive.substring(iTag, iTag+1).indexOf("1") == 0;
+}
+
+function isPIORead(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)
+    {
+        return false;
+    }
+    
+    var sCmd = gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_COMMAND];
+
+    return sCmd.indexOf("87") == 0 ||    // "CFA TRANSLATE SECTOR - 87h, PIO data-in",
+           sCmd.indexOf("EC") == 0 ||    // "IDENTIFY DEVICE - ECh, PIO Data-in",
+           sCmd.indexOf("E4") == 0 ||    // "READ BUFFER - E4, PIO data-in",
+           sCmd.indexOf("2F") == 0 ||    // "READ LOG EXT - 2Fh, PIO data-in",
+           sCmd.indexOf("C4") == 0 ||    // "READ MULTIPLE - C4h, PIO data-in",
+           sCmd.indexOf("29") == 0 ||    // "READ MULTIPLE EXT - 29h, PIO data-in",
+           sCmd.indexOf("20") == 0 ||    // "READ SECTOR(S) - 20h, PIO data-in",
+           sCmd.indexOf("24") == 0 ||    // "READ SECTOR(S) EXT - 24h, PIO data-in",
+           sCmd.indexOf("2B") == 0;      // "READ STREAM EXT - 2Bh, PIO data-in",    
 }
 
 function isPIOSetupFIS(i)
@@ -396,7 +432,7 @@ function getPAInfo(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS)
     {
-        return getCmdInfo(i) + " (" + (getTransferLength(i) / 2) + "KB)";
+        return getCmdInfo(i) + " (" + getTransferKB(i) + "KB)";
     }
     else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE)
     {
@@ -414,7 +450,7 @@ function getCmdInfo(i)
 
     for (var i = 0; i < AS_ATA_CMD_LIST.length; i++)
     {
-        if (AS_ATA_CMD_LIST[i].indexOf(sCmdOP) > 0)
+        if (AS_ATA_CMD_LIST[i].indexOf(sCmdOP + "h") > 0)
         {
             return AS_ATA_CMD_LIST[i];
         }
@@ -446,6 +482,12 @@ function getSectorCnt(i)
     }
     
     var j = gaasPASeq[i][IDX_PA_NO];
+    
+    if (parseInt(gaasFISSeq[j][IDX_FIS_SECTORS]) == 0)
+    {
+        return 0;
+    }
+    
     return getNumber(gaasFISSeq[j][IDX_FIS_SECTORS], 16);
 }
 
@@ -502,18 +544,21 @@ function isLegalPAIdx(i)
     return (i >= 0 && i < giPAIndex);
 }
 
+function isOOB(i)
+{
+    return isLegalPAIdx(i) && gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB;
+}
+
 function isHostOOB(i)
 {
-    return isLegalPAIdx(i) && 
-           gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB &&
+    return isOOB(i) &&
            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_PORT].indexOf("I1") >= 0;
 }
 
 function isDeviceOOB(i)
 {
-    return isLegalPAIdx(i) && 
-            gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB &&
-            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_PORT].indexOf("T1") >= 0;
+    return isOOB(i) &&
+           gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_PORT].indexOf("T1") >= 0;
 }
 
 function isHostPrimitive(i)
@@ -746,9 +791,9 @@ function err(sText)
 function log(sText)
 {
     //gsTempLog += "\r\n" + sText;
-	if (gbEnableLog)
-	{
-		console.log(sText);
+    if (gbEnableLog)
+    {
+        console.log(sText);
     }
     //document.getElementById("idLog").innerHTML += "<p></p>" + sText;
 }

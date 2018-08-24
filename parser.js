@@ -268,7 +268,7 @@ function buildCSV()
 {
     log("build CSV");
     
-    var bPIO = false;
+    var bPIORead = false;
     var bNonNCQ = false;
     var bNonNCQIdx = 0;
 	var bNCQ = false;
@@ -276,6 +276,8 @@ function buildCSV()
 	var iUndoneNCQTag = [];
 	var iUndoneNCQCnt = 0;
 	var iNCQIdx = [];
+    var bCRST = false;
+    var iCRSTIdx = 0;
 	
 	for (var i = 0; i < 32; i++)
 	{
@@ -286,16 +288,29 @@ function buildCSV()
     {
         if (isHostOOB(i))
         {
+            if (bPIORead) // ex. IDFY -> COMRESET
+            {
+                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, iDataFISIdx));
+                
+                bPIORead = false;
+                bNonNCQ = false;
+            }
+            
             if (isComreset(i))
             {
+                iCRSTIdx = i;
+                
                 if (isDeviceOOB(i+1) && isCominit(i+1))
                 {
-                    addCSV(IDX_CSV_COMRESET_RESPONSE, i, getDurationUS(i, i+1));
+                    // COMRESET response time 1: between COMRESET and COMINIT
+                    //addCSV(IDX_CSV_COMRESET_RESPONSE, i, getDurationUS(i, i+1));
                 }
                 else if ((i+1) < giPAIndex)
                 {
                     errCSV(i+1, "Host 發 COMRSET 之後 , 不是 Device 回 COMINIT");
                 }
+                
+                bCRST = true;
             }
             else if (isComwake(i))
             {
@@ -313,6 +328,14 @@ function buildCSV()
         }
         else if (isHostPrimitive(i))
         {
+            if (bPIORead) // ex. IDFY -> Partial/Slumber
+            {
+                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, iDataFISIdx));
+                
+                bPIORead = false;
+                bNonNCQ = false;
+            }
+            
             if (isPartial(i))
             {
                 if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
@@ -338,6 +361,19 @@ function buildCSV()
         }
 		else if (isNCQ(i))
 		{
+            if (bPIORead) // ex. IDFY -> NCQ read/write
+            {
+                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, iDataFISIdx));
+                
+                bPIORead = false;
+                bNonNCQ = false;
+            }
+            
+            if (bCRST)
+            {
+                err(getClaim(i) + ": COMRESET 之後還沒收到 D2H FIS , 就先送出 NCQ cmd");
+            }
+            
 			var iTag = getNCQTag(i);
 			
 			bNCQ = true;
@@ -380,10 +416,28 @@ function buildCSV()
 		}
         else if (isNonNCQ(i))
         {
-            bPIO = false; // init
+			if (bNonNCQ && !bPIORead)
+			{
+				err(getClaim(bNonNCQIdx) + " 還沒有送出 D2H FIS , " + getClaim(i) + " 就已經收到了");
+			}
+            
+            if (bCRST)
+            {
+                err(getClaim(i) + ": COMRESET 之後還沒收到 D2H FIS , 就先送出 non-NCQ cmd");
+            }
+            
+            if (bPIORead) // ex. IDFY -> read/write
+            {
+                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, iDataFISIdx));
+                
+                bPIORead = false;
+                bNonNCQ = false;
+            }
             
             bNonNCQ = true;
             bNonNCQIdx = i;
+            
+            bPIORead = isPIORead(i);
 
 			if (bNCQ)
 			{
@@ -401,20 +455,41 @@ function buildCSV()
         }
         else if (isPIOSetupFIS(i))
         {
-            bPIO = true;
         }
-        else if (bPIO && isDeviceFIS(i) && isDataFIS(i))
+        else if (isDataFIS(i))
         {
-            // do not get the duration for PIO read cause it is no D2H FIS
-            bNonNCQ = false;
+            iDataFISIdx = i;
         }
-        else if (bNonNCQ && isD2HFIS(i))
+        else if (isD2HFIS(i))
         {
-            //log("CMD:" + getClaim(bNonNCQIdx) + " -> " + getClaim(i));
-            //log(getDurationUS(bNonNCQIdx, i) + " = " + getStartTime(i) + " - " + getEndTime(bNonNCQIdx));
-            addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, i));
+            if (bNonNCQ)
+            {
+                //log("CMD:" + getClaim(bNonNCQIdx) + " -> " + getClaim(i));
+                //log(getDurationUS(bNonNCQIdx, i) + " = " + getStartTime(i) + " - " + getEndTime(bNonNCQIdx));
+                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, i));
             
-            bNonNCQ = false;
+                bNonNCQ = false;
+            }
+            else if (bCRST)
+            {
+                // D2H FIS for COMRESET
+                bCRST = false;
+                
+                err(getClaim(iCRSTIdx) + " -> " + getClaim(i));
+                err(getStartTime(iCRSTIdx) + " -> " + getStartTime(i));
+                
+                // COMRESET response time 2: between COMRESET and D2H FIS
+                addCSV(IDX_CSV_COMRESET_RESPONSE, iCRSTIdx, getDurationUS(iCRSTIdx, i));
+            }
+            else if (bNCQ)
+            {
+                // D2H FIS for NCQ cmd
+            }
+            else
+            {
+                err(getClaim(i) + " 這個 D2H FIS 之前沒有 non-NCQ cmd 也沒有 COMRESET");
+            }
+            
         }
     }
 }
