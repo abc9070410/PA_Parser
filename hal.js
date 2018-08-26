@@ -483,7 +483,7 @@ function getSectorCnt(i)
     
     var j = gaasPASeq[i][IDX_PA_NO];
     
-    if (parseInt(gaasFISSeq[j][IDX_FIS_SECTORS]) == 0)
+    if (parseInt(gaasFISSeq[j][IDX_FIS_SECTORS], 16) == 0)
     {
         return 0;
     }

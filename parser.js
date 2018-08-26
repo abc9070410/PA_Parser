@@ -303,7 +303,7 @@ function buildCSV()
                 if (isDeviceOOB(i+1) && isCominit(i+1))
                 {
                     // COMRESET response time 1: between COMRESET and COMINIT
-                    //addCSV(IDX_CSV_COMRESET_RESPONSE, i, getDurationUS(i, i+1));
+                    addCSV(IDX_CSV_COMRESET_RESPONSE, i, getDurationUS(i, i+1));
                 }
                 else if ((i+1) < giPAIndex)
                 {
@@ -391,7 +391,7 @@ function buildCSV()
 		{
 			var sSActiveBin = getSActiveBin(i);
 			
-			log(getClaim(i) + " SACTIVE:" + sSActiveBin);
+			log(getClaim(i) + " SACTIVE:" + sSActiveBin + "(" + getSActiveHex(i) + ")");
 			
 			for (var j = 0; j < 32; j++)
 			{
@@ -475,11 +475,11 @@ function buildCSV()
                 // D2H FIS for COMRESET
                 bCRST = false;
                 
-                err(getClaim(iCRSTIdx) + " -> " + getClaim(i));
-                err(getStartTime(iCRSTIdx) + " -> " + getStartTime(i));
+                log(getClaim(iCRSTIdx) + " -> " + getClaim(i));
+                log(getStartTime(iCRSTIdx) + " -> " + getStartTime(i));
                 
                 // COMRESET response time 2: between COMRESET and D2H FIS
-                addCSV(IDX_CSV_COMRESET_RESPONSE, iCRSTIdx, getDurationUS(iCRSTIdx, i));
+                //addCSV(IDX_CSV_COMRESET_RESPONSE, iCRSTIdx, getDurationUS(iCRSTIdx, i));
             }
             else if (bNCQ)
             {
@@ -493,3 +493,5 @@ function buildCSV()
         }
     }
 }
+
+// SActive|61\(H|Sector Count\.|60\(H
