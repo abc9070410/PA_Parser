@@ -434,11 +434,6 @@ function buildCSV()
                 bNonNCQ = false;
             }
             
-            bNonNCQ = true;
-            bNonNCQIdx = i;
-            
-            bPIORead = isPIORead(i);
-
 			if (bNCQ)
 			{
 				for (var j = 0; j < 32; j++)
@@ -452,6 +447,23 @@ function buildCSV()
 				}
 				bNCQ = false;
 			}
+            
+            if (isNOP(i))
+            {
+                addCSV(IDX_CSV_CMD_DURATION, i, (getEndTime(i) - getStartTime(i)) / 1000);
+            }
+            else if (isCBit0(i))
+            {
+                err(getClaim(i) + " is illegal cause C bit is 0");
+            }
+            else
+            {
+                bNonNCQ = true;
+                bNonNCQIdx = i;
+                
+                bPIORead = isPIORead(i);
+                
+            }
         }
         else if (isPIOSetupFIS(i))
         {

@@ -77,6 +77,13 @@ function getStartTime(i)
     }
 }
 
+function getStartMS(i)
+{
+    var iNS = getStartTime(i);
+    
+    return iNS / 1000000;
+}
+
 function getEndTime(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE)
@@ -114,7 +121,7 @@ function getDurationUS(i, j)
 // get the duration time from i to j (time unit: ns) (j must bigger than i)
 function getDuration(i, j)
 {
-    if (isOOB(i))
+    if (isOOB(i) || isPrimitive(i))
     {
         return getStartTime(j) - getStartTime(i);
     }
@@ -287,6 +294,13 @@ function isSDBFIS(i)
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("A1") == 0;
 }
 
+// device would ignore the illegal cmd fis which C bit is 0
+function isCBit0(i)
+{
+    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+           gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_CBIT] == "0";
+}
+
 function getSActiveHex(i)
 {
     if (!isSDBFIS(i))
@@ -315,6 +329,18 @@ function getSActiveBin(i)
 function isTagDone(sSActive, iTag)
 {
     return sSActive.substring(iTag, iTag+1).indexOf("1") == 0;
+}
+
+function isNOP(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)
+    {
+        return false;
+    }
+    
+    var sCmd = gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_COMMAND];
+    
+    return sCmd.indexOf("00") == 0;
 }
 
 function isPIORead(i)
@@ -561,18 +587,21 @@ function isDeviceOOB(i)
            gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_PORT].indexOf("T1") >= 0;
 }
 
+function isPrimitive(i)
+{
+    return isLegalPAIdx(i) && gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE;
+}
+
 function isHostPrimitive(i)
 {
-    return isLegalPAIdx(i) && 
-            gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
+    return isPrimitive(i) &&
             (gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Host") >= 0 || 
              gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Initiator") >= 0);
 }
 
 function isDevicePrimitive(i)
 {
-    return isLegalPAIdx(i) && 
-            gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
+    return isPrimitive(i) &&
             (gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Device") >= 0 || 
              gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Target") >= 0);
 }
@@ -766,8 +795,21 @@ function initCSV()
 
 function addCSV(iCSVIdx, iNo, iValue)
 {
-    var i = getClaimNo(iNo);
+    var i;
 
+    if (gsAxisXType == S_X_AXIS_NO)
+    {
+        i = getClaimNo(iNo);
+    }
+    else if (gsAxisXType == S_X_AXIS_TIME_MS)
+    {
+        i = getStartMS(iNo) 
+    }
+    else
+    {
+        err("gsAxisXType is wrong: " + gsAxisXType);
+    }
+    
     if (gasCSVType[iCSVIdx] == "")
     {
         gasCSVType[iCSVIdx] = getClaim(iNo).split("" + i)[0];

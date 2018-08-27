@@ -71,7 +71,12 @@ var AS_ATA_CMD_LIST = [
 "WRITE FPDMA QUEUED - 61h, DMA"
 ];
 
+var S_X_AXIS_NO = "NO"; // x axis is sequence of NO (ex. Link1, Link2, .... Link100)
+var S_X_AXIS_TIME_MS = "Time(MS)"; // x axis is sequence of time (ex. 10.00s, 10.01s, ... 60.00s)
 
+// ---------------------------    SVG Option    ---------------------------
+
+var gsAxisXType = S_X_AXIS_NO;
 
 // --------------------------- Global Veriables ---------------------------
 
@@ -125,9 +130,10 @@ var IDX_FIS_CONTROL = 6;
 var IDX_FIS_DEVICE = 7;
 var IDX_FIS_ERROR = 8;
 var IDX_FIS_SACTIVE = 9;
+var IDX_FIS_CBIT = 10;
 //var IDX_FIS_C = 9;
 //var IDX_FIS_I = 10;
-var IDX_FIS_AMOUNT = 10;
+var IDX_FIS_AMOUNT = 11;
 
 var TAG_FIS = [
     ["FIS Type", IDX_FIS_TYPE],
@@ -139,7 +145,8 @@ var TAG_FIS = [
     ["Control", IDX_FIS_CONTROL],
     ["Device", IDX_FIS_DEVICE],
     ["Error", IDX_FIS_ERROR],
-	["SActive", IDX_FIS_SACTIVE]
+	["SActive", IDX_FIS_SACTIVE],
+    ["C_BIT", IDX_FIS_CBIT]
     //["C", IDX_FIS_C],
     //["I", IDX_FIS_I]
 ];
@@ -219,3 +226,5 @@ var gasCSVType = [];
 var gaaiCSVPAIdx = [];
 
 var gbEnableLog = false;
+
+var gsNowFileName = "";

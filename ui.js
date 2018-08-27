@@ -21,7 +21,7 @@ function updateTitle()
     
     log(asTemp[asTemp.length - 2]);
 
-    document.getElementById("idTitle").innerHTML = asTemp[asTemp.length - 2].replace(/_/g, " ");
+    //document.getElementById("idTitle").innerHTML = asTemp[asTemp.length - 2].replace(/_/g, " ");
 }
 
 
@@ -37,9 +37,25 @@ function downloadLog()
         today.getMinutes() + "_" + 
         today.getSeconds();
 
-    downloadText(currentDateTime + ".log", gsTempLog);
+    downloadText(gsNowFileName + "_LOG_" + currentDateTime + ".log", gsTempLog);
     
     log("download log done");
+}
+
+function downloadErrLog()
+{
+    var today=new Date();
+    var currentDateTime =
+        today.getFullYear() + "_" + 
+        (today.getMonth()+1) + "_" + 
+        today.getDate() + "_" + 
+        today.getHours() + "_" + 
+        today.getMinutes() + "_" + 
+        today.getSeconds();
+
+    downloadText(gsNowFileName + "_ERR_" + currentDateTime + ".log", gsTempErrLog);
+    
+    log("download err log done");
 }
 
 function downloadText(filename, text) 
@@ -269,5 +285,5 @@ function drawSVG(sDrawID, iCSVIdx)
       //.attr("x", -(iSpace * 2))
       .attr("dy", ".71em")
       .style("text-anchor", "end")
-      .text("No");;
+      .text(gsAxisXType);;
 }

@@ -12,6 +12,7 @@ function initUI()
     updateTitle();
     
     hideDIV("idDownloadLog");
+    hideDIV("idDownloadErrLog");
     hideDIV("idResultTitle");
     hideDIV("idLogTitle");
     hideDIV("idProgress");
@@ -38,6 +39,7 @@ function initData()
 function addListener()
 {
     document.getElementById("idDownloadLog").addEventListener("click", downloadLog, false);
+    document.getElementById("idDownloadErrLog").addEventListener("click", downloadErrLog, false);
     document.getElementById("idLoadFile").addEventListener('change', handleFileSelect, false);
 }
 
@@ -52,6 +54,8 @@ function handleFileSelect(evt)
     var output = [];
     for (var i = 0, f; f = files[i]; i++) {
         var sInfo = '<strong>' + escape(f.name) + '</strong>';
+        
+        gsNowFileName = f.name.split(/\./)[0];
     
         output.push('<strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
                   f.size, ' bytes, last modified: ',
@@ -107,10 +111,15 @@ function mainWork()
 function formatText()
 {
     log("Text length : " + gsText.length);
+    // ex. before: C.......................................0(H)
+    //     after : C_BIT...................................0(H)
+    gsText = gsText.replace(/C\.\.\.\./g, "C_BIT");
+    
     for (var i = 0; i < 100; i ++)
     {
         gsText = gsText.replace(/\.\./g, ".");
     }
+    
     gsText = gsText.replace(/\(H\)/g, "");
     gsText = gsText.replace(/\n\s+/g, "\n");
     log("Text length : " + gsText.length);
@@ -130,6 +139,7 @@ function parseText()
 
     showDIV("idLogTitle");
     showDIV("idDownloadLog");
+    showDIV("idDownloadErrLog");
 }
 
 function checkVerification()
