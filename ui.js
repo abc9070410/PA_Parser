@@ -218,7 +218,7 @@ function drawSVG(sDrawID, iCSVIdx)
     .attr("class", "tooltip")				
     .style("opacity", 0);
 
-    var svg = d3.select("#" + sDrawID).append("svg").attr("id","svg").attr("height", "100%").attr("width", "100%");
+    var svg = d3.select("#" + sDrawID).append("svg").attr("id","svg").attr("height", "110%").attr("width", "100%");
     
     
     var chartGroup = svg.append("g").attr("class","chartGroup").attr("transform","translate("+xNudge+","+yNudge+")");

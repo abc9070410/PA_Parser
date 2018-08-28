@@ -825,8 +825,9 @@ function addCSV(iCSVIdx, iNo, iValue)
 
 function err(sText)
 {
-    gsTempErrLog = sText;
-    console.log("Err : " + gsTempErrLog);
+    console.log("Err : " + sText);
+    
+    gsTempErrLog += "\r\n" + sText;
     //console.trace();
 }
 

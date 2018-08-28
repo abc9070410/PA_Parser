@@ -260,8 +260,7 @@ function parseSequence()
 
 function errCSV(iPAIdx, sMessage)
 {
-    err(iPAIdx);
-    err(getClaim(iPAIdx) + ":" + sMessage);
+    err(iPAIdx + " " +getClaim(iPAIdx) + ":" + sMessage);
 }
 
 function buildCSV()
@@ -270,19 +269,19 @@ function buildCSV()
     
     var bPIORead = false;
     var bNonNCQ = false;
-    var bNonNCQIdx = 0;
-	var bNCQ = false;
-	var iUndoneNCQIdx = [];
-	var iUndoneNCQTag = [];
-	var iUndoneNCQCnt = 0;
-	var iNCQIdx = [];
+    var iNonNCQIdx = 0;
+    var bNCQ = false;
+    var iUndoneNCQIdx = [];
+    var iUndoneNCQTag = [];
+    var iUndoneNCQCnt = 0;
+    var iNCQIdx = [];
     var bCRST = false;
     var iCRSTIdx = 0;
-	
-	for (var i = 0; i < 32; i++)
-	{
-		iNCQIdx[i] = -1;
-	}
+    
+    for (var i = 0; i < 32; i++)
+    {
+        iNCQIdx[i] = -1;
+    }
 
     for (var i = 0; i < giPAIndex; i++)
     {
@@ -290,7 +289,7 @@ function buildCSV()
         {
             if (bPIORead) // ex. IDFY -> COMRESET
             {
-                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, iDataFISIdx));
+                addCSV(IDX_CSV_CMD_DURATION, iNonNCQIdx, getDurationUS(iNonNCQIdx, iDataFISIdx));
                 
                 bPIORead = false;
                 bNonNCQ = false;
@@ -311,6 +310,27 @@ function buildCSV()
                 }
                 
                 bCRST = true;
+                
+                if (bNCQ)
+                {
+                    var sTempStr = "";
+                    for (var j = 0; j < 32; j++)
+                    {
+                        if (iNCQIdx[j] >= 0)
+                        {
+                            sTempStr += getClaim(iNCQIdx[j]) + ",";
+                        }
+                    }
+                    
+                    errCSV(i, iUndoneNCQCnt + " 個未完成 NCQ cmd: " + sTempStr);
+                    errCSV(i, "之前有未完成的 NCQ cmd 被 COMRESET打斷");
+                    bNCQ = false;
+                }
+                if (bNonNCQ)
+                {
+                    errCSV(i, " 之前有未完成的 NCQ cmd(" + getClaim(iNonNCQIdx) + ") 被 COMRESET打斷");
+                    bNonNCQ = false;
+                }
             }
             else if (isComwake(i))
             {
@@ -330,7 +350,7 @@ function buildCSV()
         {
             if (bPIORead) // ex. IDFY -> Partial/Slumber
             {
-                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, iDataFISIdx));
+                addCSV(IDX_CSV_CMD_DURATION, iNonNCQIdx, getDurationUS(iNonNCQIdx, iDataFISIdx));
                 
                 bPIORead = false;
                 bNonNCQ = false;
@@ -359,11 +379,11 @@ function buildCSV()
                 }
             }
         }
-		else if (isNCQ(i))
-		{
+        else if (isNCQ(i))
+        {
             if (bPIORead) // ex. IDFY -> NCQ read/write
             {
-                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, iDataFISIdx));
+                addCSV(IDX_CSV_CMD_DURATION, iNonNCQIdx, getDurationUS(iNonNCQIdx, iDataFISIdx));
                 
                 bPIORead = false;
                 bNonNCQ = false;
@@ -371,82 +391,92 @@ function buildCSV()
             
             if (bCRST)
             {
-                err(getClaim(i) + ": COMRESET 之後還沒收到 D2H FIS , 就先送出 NCQ cmd");
+                errCSV(i, ": COMRESET 之後還沒收到 D2H FIS , 就先送出 NCQ cmd");
             }
             
-			var iTag = getNCQTag(i);
-			
-			bNCQ = true;
-			
-			iNCQIdx[iTag] = i;
-			
-			//iUndoneNCQTag[iUndoneNCQCnt] = iTag;
-			//iUndoneNCQIdx[iUndoneNCQCnt] = i;
-			
-			iUndoneNCQCnt++;
+            var iTag = getNCQTag(i);
+            
+            bNCQ = true;
+            
+            if (iNCQIdx[iTag] == -1)
+            {
+                iNCQIdx[iTag] = i;
+                iUndoneNCQCnt++;
+                log(getClaim(i) + " issued tag" + iTag + "(UndoneNCQ:" + iUndoneNCQCnt+ ")");
+            }
+            else
+            {
+                errCSV(i, "Tag" + iTag + " 尚未完成還來新的 NCQ cmd");
+            }
+        }
+        else if (isSDBFIS(i))
+        {
+            var sSActiveBin = getSActiveBin(i);
+            
+            log(getClaim(i) + " SACTIVE:" + sSActiveBin + "(" + getSActiveHex(i) + ")");
 
-			log(getClaim(i) + " issued tag" + iTag + "(UndoneNCQ:" + iUndoneNCQCnt+ ")");
-		}
-		else if (isSDBFIS(i))
-		{
-			var sSActiveBin = getSActiveBin(i);
-			
-			log(getClaim(i) + " SACTIVE:" + sSActiveBin + "(" + getSActiveHex(i) + ")");
-			
-			for (var j = 0; j < 32; j++)
-			{
-				//err("->" + (1 << j).toString(2));
-				if (sSActiveBin == (1 << j).toString(2))
-				{
-					if (iNCQIdx[j] == -1)
-					{
-						err(getClaim(i) + ": TAG" + j + " 存在於 SACTIVE , 但之前沒有這個未完成 NCQ cmd");
-					}
-					else
-					{
-						addCSV(IDX_CSV_CMD_DURATION, iNCQIdx[j], getDurationUS(iNCQIdx[j], i));
-						
-						log("Match tag:" + j + "(idx:" + iNCQIdx[j] + ") , UndoneNCQ:" + iUndoneNCQCnt);
-						
-						iNCQIdx[j] = -1;
-						iUndoneNCQCnt--;
-					}
-				}
-			}
-		}
+            for (var j = 0; j < 32; j++)
+            {
+                //log("->" + (1 << j).toString(2));
+                if (sSActiveBin == Math.abs((1 << j)).toString(2))
+                {
+                    if (iNCQIdx[j] == -1)
+                    {
+                        errCSV(i, "TAG" + j + " 存在於 SACTIVE , 但之前沒有這個未完成 NCQ cmd");
+                    }
+                    else
+                    {
+                        addCSV(IDX_CSV_CMD_DURATION, iNCQIdx[j], getDurationUS(iNCQIdx[j], i));
+                        
+                        iUndoneNCQCnt--;
+                        
+                        log("Match tag:" + j + "(idx:" + iNCQIdx[j] + ") , UndoneNCQ:" + iUndoneNCQCnt);
+                        
+                        iNCQIdx[j] = -1;
+                    }
+                }
+            }
+            
+            log("iUndoneNCQCnt:" + iUndoneNCQCnt);
+            
+            if (iUndoneNCQCnt == 0)
+            {
+                bNCQ = false;
+            }
+        }
         else if (isNonNCQ(i))
         {
-			if (bNonNCQ && !bPIORead)
-			{
-				err(getClaim(bNonNCQIdx) + " 還沒有送出 D2H FIS , " + getClaim(i) + " 就已經收到了");
-			}
+            if (bNonNCQ && !bPIORead)
+            {
+                errCSV(i, "在此之前 , " + getClaim(iNonNCQIdx) + " 還沒有送出 D2H FIS");
+            }
             
             if (bCRST)
             {
-                err(getClaim(i) + ": COMRESET 之後還沒收到 D2H FIS , 就先送出 non-NCQ cmd");
+                errCSV(i, ": COMRESET 之後還沒收到 D2H FIS , 就先送出 non-NCQ cmd");
             }
             
             if (bPIORead) // ex. IDFY -> read/write
             {
-                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, iDataFISIdx));
+                addCSV(IDX_CSV_CMD_DURATION, iNonNCQIdx, getDurationUS(iNonNCQIdx, iDataFISIdx));
                 
                 bPIORead = false;
                 bNonNCQ = false;
             }
             
-			if (bNCQ)
-			{
-				for (var j = 0; j < 32; j++)
-				{
-					if (iNCQIdx[j] >= 0)
-					{
-						addCSV(IDX_CSV_CMD_DURATION, iNCQIdx[j], -1000);
-						
-						err(getClaim(iNCQIdx[j]) + " 沒有相對應的 SDB FIS");
-					}
-				}
-				bNCQ = false;
-			}
+            if (bNCQ)
+            {
+                for (var j = 0; j < 32; j++)
+                {
+                    if (iNCQIdx[j] >= 0)
+                    {
+                        addCSV(IDX_CSV_CMD_DURATION, iNCQIdx[j], -1000);
+                        
+                        errCSV(i, "在此之前 , " + getClaim(iNCQIdx[j]) + " 沒有相對應的 SDB FIS");
+                    }
+                }
+                bNCQ = false;
+            }
             
             if (isNOP(i))
             {
@@ -454,12 +484,12 @@ function buildCSV()
             }
             else if (isCBit0(i))
             {
-                err(getClaim(i) + " is illegal cause C bit is 0");
+                errCSV(i, " is illegal cause C bit is 0");
             }
             else
             {
                 bNonNCQ = true;
-                bNonNCQIdx = i;
+                iNonNCQIdx = i;
                 
                 bPIORead = isPIORead(i);
                 
@@ -476,9 +506,9 @@ function buildCSV()
         {
             if (bNonNCQ)
             {
-                //log("CMD:" + getClaim(bNonNCQIdx) + " -> " + getClaim(i));
-                //log(getDurationUS(bNonNCQIdx, i) + " = " + getStartTime(i) + " - " + getEndTime(bNonNCQIdx));
-                addCSV(IDX_CSV_CMD_DURATION, bNonNCQIdx, getDurationUS(bNonNCQIdx, i));
+                //log("CMD:" + getClaim(iNonNCQIdx) + " -> " + getClaim(i));
+                //log(getDurationUS(iNonNCQIdx, i) + " = " + getStartTime(i) + " - " + getEndTime(iNonNCQIdx));
+                addCSV(IDX_CSV_CMD_DURATION, iNonNCQIdx, getDurationUS(iNonNCQIdx, i));
             
                 bNonNCQ = false;
             }
@@ -499,7 +529,7 @@ function buildCSV()
             }
             else
             {
-                err(getClaim(i) + " 這個 D2H FIS 之前沒有 non-NCQ cmd 也沒有 COMRESET");
+                errCSV(i, " 這個 D2H FIS 之前沒有 non-NCQ cmd 也沒有 COMRESET");
             }
             
         }

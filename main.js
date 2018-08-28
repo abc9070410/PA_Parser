@@ -150,6 +150,7 @@ function checkVerification()
     checkAutoWakeupP2S();
     checkAutoActivate();
     checkPIOMultiple();
+    checkAligned8KB();
 }
 
 function doStatistics()
