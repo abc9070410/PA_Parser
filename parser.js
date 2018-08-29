@@ -36,13 +36,15 @@ function parseFIS(asLineToken, iTextLineIdx)
 
     log("No." + giPAIndex + " PA - " + "NO." + giFISIndex + " FIS");
 
+    var bIsData = false;
     var iLength = asLineToken.length;
                 
     for (var j = iTextLineIdx + 2; j < iLength; j++)
     {
         var asTemp = asLineToken[j].split(/\./);
 
-        for (var k = 0; k < IDX_FIS_AMOUNT; k++)
+        var k;
+        for (k = 0; k < IDX_FIS_AMOUNT; k++)
         {
             if (asTemp[0].indexOf(TAG_FIS[k][0]) == 0)
             {
@@ -55,7 +57,58 @@ function parseFIS(asLineToken, iTextLineIdx)
                 }
 
                 log("match " + TAG_FIS[k][0] + " : " + TAG_FIS[k][1] + "," + gaasFISSeq[giFISIndex][TAG_FIS[k][1]]);
+                
+                if (k == IDX_FIS_DATA)
+                {
+                    bIsData = true;
+                    
+                    break;
+                }
+                else if (bIsData && k == IDX_FIS_CRC)
+                {
+                    bIsData = false;
+                    
+                    log(getClaim(giPAIndex) + ": Data length:" + gaasFISSeq[giFISIndex][TAG_FIS[IDX_FIS_DATA][1]].length);
+                    //err(gaasFISSeq[giFISIndex][TAG_FIS[IDX_FIS_DATA][1]]);
+                    
+                    break;
+                }
             }
+        }
+        
+        if (k == IDX_FIS_DATA)
+        {
+            continue; // go to check the following lines
+        }
+
+        // ex.
+        // Data....................................19D108000000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         100000001000000010000000100000001000000010000000
+        //                                         0000000019D10800(H)
+        // CRC.....................................5DA42C6E(H)
+        if (bIsData)
+        {
+            // add Data from the second line
+            gaasFISSeq[giFISIndex][TAG_FIS[IDX_FIS_DATA][1]] += asLineToken[j].trim();
         }
         
         asTemp = asLineToken[j].split(/:/);

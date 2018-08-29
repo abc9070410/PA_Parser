@@ -218,6 +218,26 @@ function isDisableAutoActivate(i)
             getNumber(gaasFISSeq[j][IDX_FIS_SECTORS], 16) == 2);
 }
 
+function isDMACmd(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)
+    {
+        return false;
+    }
+
+    return getCmdInfo(i).indexOf("DMA") >= 0;
+}
+
+function isNonDataCmd(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)
+    {
+        return false;
+    }
+
+    return getCmdInfo(i).indexOf("non-data") >= 0;
+}
+
 function isNCQ(i)
 {
     return isH2DFIS(i) &&
@@ -268,6 +288,11 @@ function getNCQTag(i)
     var iSectors = getSectorCnt(i);
     
     return (iSectors % 0xFF) / 8;
+}
+
+function isFIS(i)
+{
+    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS;
 }
 
 function isDataFIS(i)
@@ -474,15 +499,28 @@ function getCmdInfo(i)
 {
     var sCmdOP = "" + getCmdOP(i);
 
-    for (var i = 0; i < AS_ATA_CMD_LIST.length; i++)
+    for (var j = 0; j < AS_ATA_CMD_LIST.length; j++)
     {
-        if (AS_ATA_CMD_LIST[i].indexOf(sCmdOP + "h") > 0)
+        if (AS_ATA_CMD_LIST[j].indexOf(sCmdOP + "h") > 0)
         {
-            return AS_ATA_CMD_LIST[i];
+            return AS_ATA_CMD_LIST[j];
         }
     }
 
     return S_NOT_FOUND + ":" + sCmdOP;
+}
+
+function getDataBitCnt(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
+    {
+        err(i + " is not a FIS");
+        return 0;
+    }
+    
+    var j = gaasPASeq[i][IDX_PA_NO];
+    
+    
 }
 
 // get CMD OP from CMD FIS
@@ -490,12 +528,25 @@ function getCmdOP(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
     {
-        err(i + " is not a CMD FIS");
+        err(i + " is not a FIS");
         return "";
     }
     
     var j = gaasPASeq[i][IDX_PA_NO];
-    return gaasFISSeq[j][IDX_FIS_COMMAND].trim();
+    return gaasFISSeq[j][IDX_FIS_DATA].length;
+}
+
+function getDataFISLength(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
+    {
+        err(i + " is not a FIS");
+        return 0;
+    }
+    
+    var j = gaasPASeq[i][IDX_PA_NO];
+
+    return gaasFISSeq[j][IDX_FIS_DATA].length;
 }
 
 // get sectorCnt from CMD FIS
@@ -503,7 +554,7 @@ function getSectorCnt(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
     {
-        err(i + " is not a CMD FIS");
+        err(i + " is not a FIS");
         return 0;
     }
     
@@ -521,7 +572,7 @@ function getFeature(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
     {
-        err(i + " is not a CMD FIS");
+        err(i + " is not a FIS");
         return 0;
     }
     
@@ -700,6 +751,7 @@ function initFailInfo()
 {
     gbFail = false;
     giFailIdx = 0;
+    gsTempErrLog = "";
 }
 
 function setFailInfo(i, sMessage)
@@ -821,6 +873,17 @@ function addCSV(iCSVIdx, iNo, iValue)
     gaaiCSVPAIdx[iCSVIdx][i] = iNo; // store the original PA idx
 }
 
+function getNowTimeStr()
+{
+    var today=new Date();
+    return today.getFullYear() + "_" + 
+            (today.getMonth()+1) + "_" + 
+            today.getDate() + "_" + 
+            today.getHours() + "_" + 
+            today.getMinutes() + "_" + 
+            today.getSeconds();
+}
+
 // about log
 
 function err(sText)
@@ -833,7 +896,7 @@ function err(sText)
 
 function log(sText)
 {
-    //gsTempLog += "\r\n" + sText;
+    gsTempLog += "\r\n" + sText;
     if (gbEnableLog)
     {
         console.log(sText);

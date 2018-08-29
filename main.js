@@ -132,7 +132,7 @@ function parseText()
 {
     parseSequence();
 
-    //checkVerification();
+    checkVerification();
     doStatistics();
     
     moveStatusBar(100);
@@ -150,7 +150,7 @@ function checkVerification()
     checkAutoWakeupP2S();
     checkAutoActivate();
     checkPIOMultiple();
-    checkAligned8KB();
+    checkDataFIS();
 }
 
 function doStatistics()

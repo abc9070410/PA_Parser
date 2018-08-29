@@ -1,6 +1,7 @@
 
 // ---------------------------      Constant       ---------------------------
 
+var I_NONE_IDX = -1;
 var I_NOT_FOUND = -1;
 var S_CODE_UART = "ERRMSG";
 var S_NOT_FOUND = " Not Found ";
@@ -131,9 +132,10 @@ var IDX_FIS_DEVICE = 7;
 var IDX_FIS_ERROR = 8;
 var IDX_FIS_SACTIVE = 9;
 var IDX_FIS_CBIT = 10;
-//var IDX_FIS_C = 9;
+var IDX_FIS_DATA = 11;
+var IDX_FIS_CRC = 12;
 //var IDX_FIS_I = 10;
-var IDX_FIS_AMOUNT = 11;
+var IDX_FIS_AMOUNT = 13;
 
 var TAG_FIS = [
     ["FIS Type", IDX_FIS_TYPE],
@@ -146,7 +148,9 @@ var TAG_FIS = [
     ["Device", IDX_FIS_DEVICE],
     ["Error", IDX_FIS_ERROR],
 	["SActive", IDX_FIS_SACTIVE],
-    ["C_BIT", IDX_FIS_CBIT]
+    ["C_BIT", IDX_FIS_CBIT],
+    ["Data", IDX_FIS_DATA],
+    ["CRC", IDX_FIS_CRC]
     //["C", IDX_FIS_C],
     //["I", IDX_FIS_I]
 ];

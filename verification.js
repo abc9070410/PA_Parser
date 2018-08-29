@@ -605,3 +605,45 @@ function checkPIOMultiple()
     }
 }
 
+function checkDataFIS()
+{
+    log("start check DataFIS");
+    
+    initFailInfo();
+    
+    for (var i = 0; i < giPAIndex; i++)
+    {
+        if (isFIS(i) && !isNonDataCmd(i))
+        {
+            var iDataLength = getDataFISLength(i);
+            
+            log(getClaim(i) + ":" + iDataLength);
+            
+            if (isDMACmd(i)) // DMA read/write cmd
+            {
+                if ((iDataLength % 8192) != 0)
+                {
+                    setFailInfo(i, "Data FIS 資料長度並沒有 aligned 8KB");
+                }
+            }
+            else // PIO read/write cmd
+            {
+                if ((iDataLength % 512) != 0)
+                {
+                    setFailInfo(i, "Data FIS 資料長度並沒有 aligned 512Bytes");
+                }
+            }
+        }
+    }
+    
+    updateResultWithTab("<hr>DataFIS 檢查結果: ");
+    
+    if (gbFail)
+    {
+        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempErrLog);
+    }
+    else
+    {
+        updatePassResult("Data FIS 資料長度都符合預期");
+    }
+}

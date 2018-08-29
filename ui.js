@@ -28,14 +28,7 @@ function updateTitle()
 
 function downloadLog()
 {
-    var today=new Date();
-    var currentDateTime =
-        today.getFullYear() + "_" + 
-        (today.getMonth()+1) + "_" + 
-        today.getDate() + "_" + 
-        today.getHours() + "_" + 
-        today.getMinutes() + "_" + 
-        today.getSeconds();
+    var currentDateTime = getNowTimeStr();
 
     downloadText(gsNowFileName + "_LOG_" + currentDateTime + ".log", gsTempLog);
     
@@ -44,14 +37,7 @@ function downloadLog()
 
 function downloadErrLog()
 {
-    var today=new Date();
-    var currentDateTime =
-        today.getFullYear() + "_" + 
-        (today.getMonth()+1) + "_" + 
-        today.getDate() + "_" + 
-        today.getHours() + "_" + 
-        today.getMinutes() + "_" + 
-        today.getSeconds();
+    var currentDateTime = getNowTimeStr();
 
     downloadText(gsNowFileName + "_ERR_" + currentDateTime + ".log", gsTempErrLog);
     
