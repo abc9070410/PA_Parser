@@ -84,7 +84,7 @@ function checkAutoP2S()
     
     if (gbFail)
     {
-        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempErrLog);
+        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempFailLog);
     }
     else if (iEnableCnt == 0)
     {
@@ -240,7 +240,7 @@ function checkAutoWakeupP2S()
     
     if (gbFail)
     {
-        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempErrLog);
+        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempFailLog);
     }
     else if (iEnableCnt == 0)
     {
@@ -351,7 +351,7 @@ function checkDIPM()
     
     if (gbFail)
     {
-        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempErrLog);
+        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempFailLog);
     }
     else if (iEnableCnt == 0)
     {
@@ -436,7 +436,7 @@ function checkHIPM()
     
     if (gbFail)
     {
-        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempErrLog);
+        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempFailLog);
     }
     else if (iPMReqCnt == 0)
     {
@@ -502,7 +502,7 @@ function checkAutoActivate()
     
     if (gbFail)
     {
-        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempErrLog);
+        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempFailLog);
     }
     else if (iEnableCnt == 0)
     {
@@ -589,7 +589,7 @@ function checkPIOMultiple()
     
     if (gbFail)
     {
-        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempErrLog);
+        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempFailLog);
     }
     else if (bSetMultiple && iTotalDataFISCnt != 0)
     {
@@ -611,10 +611,15 @@ function checkDataFIS()
     
     initFailInfo();
     
+    var ubCorrectLengthCnt = [];
+    var iDataFISCnt = 0;
+    
     for (var i = 0; i < giPAIndex; i++)
     {
         if (isFIS(i) && !isNonDataCmd(i))
         {
+            iDataFISCnt++;
+            
             var iDataLength = getDataFISLength(i);
             
             log(getClaim(i) + ":" + iDataLength);
@@ -623,14 +628,28 @@ function checkDataFIS()
             {
                 if ((iDataLength % 8192) != 0)
                 {
-                    setFailInfo(i, "Data FIS 資料長度並沒有 aligned 8KB");
+                    if (ubCorrectLengthCnt[I_DMA_DATA_FIS]) // exist correct DATA FIS before
+                    {
+                        setFailInfo(i, "Data FIS 資料長度並沒有 aligned 8KB");
+                    }
+                }
+                else
+                {
+                    ubCorrectLengthCnt[I_DMA_DATA_FIS]++;
                 }
             }
             else // PIO read/write cmd
             {
                 if ((iDataLength % 512) != 0)
                 {
-                    setFailInfo(i, "Data FIS 資料長度並沒有 aligned 512Bytes");
+                    if (ubCorrectLengthCnt[I_PIO_DATA_FIS]) // exist correct DATA FIS before
+                    {
+                        setFailInfo(i, "Data FIS 資料長度並沒有 aligned 512Bytes");
+                    }
+                }
+                else
+                {
+                    ubCorrectLengthCnt[I_PIO_DATA_FIS]++;
                 }
             }
         }
@@ -640,7 +659,15 @@ function checkDataFIS()
     
     if (gbFail)
     {
-        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempErrLog);
+        updateFailResult(getClaim(giFailIdx) + "發生錯誤: " + gsTempFailLog);
+    }
+    else if (iDataFISCnt == 0)
+    {
+        updatePassResult("不存在 Data FIS");
+    }
+    else if (ubCorrectLengthCnt[I_PIO_DATA_FIS] == 0 && ubCorrectLengthCnt[I_PIO_DATA_FIS] == 0)
+    {
+        updatePassResult("不存在正常長度的 Data FIS , 可能本來就沒有錄滿");
     }
     else
     {

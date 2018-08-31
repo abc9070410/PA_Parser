@@ -27,6 +27,7 @@ function initData()
     gsResult = "";
     gsTempLog = "";
     gsTempErrLog = "";
+    gsTempFailLog = "";
     
     giPAIndex = 0;
     gaasPASeq = [];

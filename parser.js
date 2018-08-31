@@ -367,11 +367,18 @@ function buildCSV()
                 if (bNCQ)
                 {
                     var sTempStr = "";
+                    var iTempCount = 0;
                     for (var j = 0; j < 32; j++)
                     {
+                        if (iTempCount % 5 == 0)
+                        {
+                            sTempStr += "\r\n";
+                        }
+                        
                         if (iNCQIdx[j] >= 0)
                         {
-                            sTempStr += getClaim(iNCQIdx[j]) + ",";
+                            sTempStr += getClaim(iNCQIdx[j]) + "(Tag:" + getNCQTag(iNCQIdx[j]) + "),";
+                            iTempCount ++;
                         }
                     }
                     

@@ -6,6 +6,9 @@ var I_NOT_FOUND = -1;
 var S_CODE_UART = "ERRMSG";
 var S_NOT_FOUND = " Not Found ";
 
+var I_DMA_DATA_FIS = 0;
+var I_PIO_DATA_FIS = 1;
+
 var AS_ATA_CMD_LIST = [
 "CFA ERASE SECTORS - C0h, non-data",
 "CFA TRANSLATE SECTOR - 87h, PIO data-in",
@@ -86,6 +89,8 @@ var gasErrLog = [];
 
 var gsTempLog = "";
 var gsTempErrLog = "";
+var gsTempFailLog = "";
+
 var gsResult = "";
 
 var gbFail;

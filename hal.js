@@ -533,7 +533,7 @@ function getCmdOP(i)
     }
     
     var j = gaasPASeq[i][IDX_PA_NO];
-    return gaasFISSeq[j][IDX_FIS_DATA].length;
+    return gaasFISSeq[j][IDX_FIS_COMMAND].trim();
 }
 
 function getDataFISLength(i)
@@ -751,12 +751,12 @@ function initFailInfo()
 {
     gbFail = false;
     giFailIdx = 0;
-    gsTempErrLog = "";
+    gsTempFailLog = "";
 }
 
 function setFailInfo(i, sMessage)
 {
-    err(sMessage);
+    failLog(sMessage);
     gbFail = true;
     giFailIdx = i;
 }
@@ -885,6 +885,12 @@ function getNowTimeStr()
 }
 
 // about log
+
+function failLog(sText)
+{
+    console.log("fail : " + sText);
+    gsTempFailLog += "\r\n" + sText;
+}
 
 function err(sText)
 {
