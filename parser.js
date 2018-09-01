@@ -330,6 +330,9 @@ function buildCSV()
     var iNCQIdx = [];
     var bCRST = false;
     var iCRSTIdx = 0;
+    var bPartial = false;
+    var bSlumber = false;
+    var bCominit = false;
     
     for (var i = 0; i < 32; i++)
     {
@@ -399,12 +402,32 @@ function buildCSV()
                     //log("COMWAKE:" + getClaim(i) + " -> " + getClaim(i+1));
                     //log(getDurationUS(i, i+1) + " = " + getStartTime(i+1) + " - " + getEndTime(i));
                     addCSV(IDX_CSV_COMWAKE_RESPONSE, i, getDurationUS(i, i+1));
+                    
+                    if (bCominit || bPartial || bSlumber)
+                    {
+                    }
+                    else
+                    {
+                        errCSV(i, "Host 發 COMWAKE 之前 , 並沒有 COMINIT/Partial/Slumber");
+                    }
+                    
+                    setComwakeType(i, bCominit, bPartial, bSlumber);
                 }
                 else if ((i+1) < giPAIndex)
                 {
                     errCSV(i+1, "Host 發 COMWAKE 之後 , 不是 Device 回 COMWAKE");
                 }
+                
+                bPartial = false;
+                bSlumber = false;
+                bCominit = false;
             }
+        }
+        else if (isCominit(i)) // only Device issues COMINIT
+        {
+            bPartial = false;
+            bSlumber = false;
+            bCominit = true;
         }
         else if (isHostPrimitive(i))
         {
@@ -426,6 +449,8 @@ function buildCSV()
                 {
                     errCSV(i+1, "Host 打 Partial 之後 , Device 並沒有接著回 ACK/NAK");
                 }
+                bPartial = true;
+                bSlumber = false;
             }
             else if (isSlumber(i))
             {
@@ -437,6 +462,21 @@ function buildCSV()
                 {
                     errCSV(i+1, "Host 打 Slumber 之後 , Device 並沒有接著回 ACK/NAK");
                 }
+                bPartial = false;
+                bSlumber = true;
+            }
+        }
+        else if (isDevicePrimitive(i))
+        {
+            if (isPartial(i))
+            {
+                bPartial = true;
+                bSlumber = false;
+            }
+            else if (isSlumber(i))
+            {
+                bPartial = false;
+                bSlumber = true;
             }
         }
         else if (isNCQ(i))
@@ -468,6 +508,8 @@ function buildCSV()
             {
                 errCSV(i, "Tag" + iTag + " 尚未完成還來新的 NCQ cmd");
             }
+            
+            setCmdType(i);
         }
         else if (isSDBFIS(i))
         {
@@ -552,8 +594,9 @@ function buildCSV()
                 iNonNCQIdx = i;
                 
                 bPIORead = isPIORead(i);
-                
             }
+            
+            setCmdType(i);
         }
         else if (isPIOSetupFIS(i))
         {

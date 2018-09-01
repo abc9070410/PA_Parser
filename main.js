@@ -35,6 +35,16 @@ function initData()
     gsResult = "";
     
     initCSV();
+    
+    for (var i = 0; i < I_CMD_TYPE_AMOUNT; i++)
+    {
+        gaiCmdDrawCnt[i] = 0;
+    }
+    
+    for (var i = 0; i < I_COMWAKE_TYPE_AMOUNT; i++)
+    {
+        gaiComwakeDrawCnt[i] = 0;
+    }
 }
 
 function addListener()

@@ -356,6 +356,122 @@ function isTagDone(sSActive, iTag)
     return sSActive.substring(iTag, iTag+1).indexOf("1") == 0;
 }
 
+function isNCQRead(sOP)
+{
+    return sOP.indexOf("60") == 0;
+}
+
+function isNCQWrite(sOP)
+{
+    return sOP.indexOf("61") == 0;
+}
+
+function isNonNCQRead(sOP)
+{
+    var asQueue = ["E4", "C8", "25", "C7", "26", "2F", "47", "C4", "29", "20", "24", "2A", "2B", "40"];
+    
+    for (var i = 0; i < asQueue.length; i++)
+    {
+        if (sOP.indexOf(asQueue[i]) == 0)
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+function isNonNCQWrite(sOP)
+{
+    var asQueue = ["E8", "CA", "35", "3D", "CC", "36", "3F", "57", "C5", "39", "30", "3A", "3B"];
+    
+    for (var i = 0; i < asQueue.length; i++)
+    {
+        if (sOP.indexOf(asQueue[i]) == 0)
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+function setCmdType(i)
+{
+    var sOP = getCmdOP(i);
+    var iClaimNo = getClaimNo(i);
+
+    var iCmdType = I_CMD_TYPE_OHTER;
+    
+    if (isNCQWrite(sOP))
+    {
+        iCmdType = I_CMD_TYPE_NCQ_WRITE;
+    }
+    else if (isNCQRead(sOP))
+    {
+        iCmdType = I_CMD_TYPE_NCQ_READ;
+    }
+    else if (isNonNCQWrite(sOP))
+    {
+        iCmdType = I_CMD_TYPE_NON_NCQ_WRITE;
+    }
+    else if (isNonNCQRead(sOP))
+    {
+        iCmdType = I_CMD_TYPE_NON_NCQ_READ;
+    }
+
+    gaiCmdDrawQueue[iClaimNo] = iCmdType;
+    gaiCmdDrawCnt[iCmdType]++; 
+    
+    //log("record " + sOP + ":" + iClaimNo + ":" + gaiCmdDrawQueue[iClaimNo]);
+}
+
+function getCmdType(iClaimNo)
+{
+    return gaiCmdDrawQueue[iClaimNo];
+}
+
+function getCmdColor(iClaimNo)
+{
+    return gaaCmdColorQueue[getCmdType(iClaimNo)][2];
+}
+
+function setComwakeType(i, bCominit, bPartial, bSlumber)
+{
+    var iClaimNo = getClaimNo(i);
+    
+    var iComwakeType = I_COMWAKE_TYPE_OTHER;
+    
+    if (bCominit)
+    {
+        iComwakeType = I_COMWAKE_TYPE_COMINIT;
+    }
+    else if (bPartial)
+    {
+        iComwakeType = I_COMWAKE_TYPE_PARTIAL;
+    }
+    else if (bSlumber)
+    {
+        iComwakeType = I_COMWAKE_TYPE_SLUMBER;
+    }
+    
+    gaiComwakeDrawQueue[iClaimNo] = iComwakeType;
+    gaiComwakeDrawCnt[iComwakeType]++;
+    
+    log("record " + iClaimNo + ":" + gaiComwakeDrawQueue[iClaimNo]);
+}
+
+function getComwakeType(iClaimNo)
+{
+    return gaiComwakeDrawQueue[iClaimNo];
+}
+
+function getComwakeColor(iClaimNo)
+{
+    log(iClaimNo + ":" + getComwakeType(iClaimNo));
+    return gaaComwakeColorQueue[getComwakeType(iClaimNo)][2];
+}
+
 function isNOP(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)

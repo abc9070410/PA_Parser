@@ -237,3 +237,33 @@ var gaaiCSVPAIdx = [];
 var gbEnableLog = false;
 
 var gsNowFileName = "";
+
+var I_CMD_TYPE_OHTER = 0;
+var I_CMD_TYPE_NCQ_WRITE = 1;
+var I_CMD_TYPE_NCQ_READ = 2;
+var I_CMD_TYPE_NON_NCQ_WRITE = 3;
+var I_CMD_TYPE_NON_NCQ_READ = 4;
+var I_CMD_TYPE_AMOUNT = 5;
+var gaiCmdDrawQueue = [];
+var gaiCmdDrawCnt = [];
+var gaaCmdColorQueue = [
+    ["Ohter Cmd", I_CMD_TYPE_OHTER, "Khaki"], 
+    ["NCQ Write", I_CMD_TYPE_NCQ_WRITE, "YellowGreen"],
+    ["NCQ Read", I_CMD_TYPE_NCQ_READ, "RoyalBlue"], 
+    ["non-NCQ Write", I_CMD_TYPE_NON_NCQ_WRITE, "Coral"], 
+    ["non-NCQ Read", I_CMD_TYPE_NON_NCQ_READ, "DarkOrchid"]];
+    
+var I_COMWAKE_TYPE_OTHER = 0;
+var I_COMWAKE_TYPE_PARTIAL = 1;
+var I_COMWAKE_TYPE_SLUMBER = 2;
+var I_COMWAKE_TYPE_COMINIT = 3;
+var I_COMWAKE_TYPE_AMOUNT = 4;
+var gaiComwakeDrawQueue = [];
+var gaiComwakeDrawCnt = [];
+var gaaComwakeColorQueue = [
+    ["Other Cases", I_COMWAKE_TYPE_OTHER, "Khaki"], 
+    ["COMWAKE for Partial", I_COMWAKE_TYPE_PARTIAL, "YellowGreen"], 
+    ["COMWAKE for Slumber", I_COMWAKE_TYPE_SLUMBER, "RoyalBlue"], 
+    ["COMWAKE for COMINIT", I_COMWAKE_TYPE_COMINIT, "Coral"]];
+
+    

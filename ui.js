@@ -90,6 +90,18 @@ function updateResult(str)
     document.getElementById("idResult").innerHTML = gsResult;
 }
 
+function updateCmdTypeInfo()
+{
+    var sInfo = "";
+    
+    for (var i = 0; i < gaaCmdColorQueue.length; i++)
+    {
+        sInfo += "<div style='color:" + gaaCmdColorQueue[i][2] + ";'>共" + gaiCmdDrawCnt[i] + "筆" + gaaCmdColorQueue[i][0] + "</div>"
+    }
+    
+    document.getElementById("idCmdTypeInfo").innerHTML = sInfo;
+}
+
 
 function moveStatusBar() {
   var elem = document.getElementById("idStatusBar");   
@@ -110,6 +122,8 @@ function drawCSV()
 {
     if (gasCSV[IDX_CSV_CMD_DURATION].length > 0)
     {
+        updateCmdTypeInfo();
+        
         document.getElementById("idCmdDurationTitle").innerHTML = "Cmd Duration Time (us)";
         drawSVG("idDrawCmdDuration", IDX_CSV_CMD_DURATION);
     }
@@ -218,9 +232,25 @@ function drawSVG(sDrawID, iCSVIdx)
         .enter().append("circle")
         .attr("transform","translate(" + margin.left + "," + 0 + ")")
         .attr("r", 3.5)
-        .attr("fill", "blue")
         .attr("cx", function(d) { return x(d.no); })
         .attr("cy", function(d) { return y(d.value); })
+        .attr("fill", function(d) { 
+        
+            var iNo = getNumber(d.no);
+
+            if (iCSVIdx == IDX_CSV_CMD_DURATION)
+            {
+                return getCmdColor(iNo);
+            }
+            else if (iCSVIdx == IDX_CSV_COMWAKE_RESPONSE)
+            {
+                return getComwakeColor(iNo);
+            }
+            else
+            {
+                return "blue";
+            }
+        })
         .on("mouseover", function(d) {
             div.transition()		
                 .duration(200)		
@@ -264,12 +294,12 @@ function drawSVG(sDrawID, iCSVIdx)
       .attr("y", -35)
       .attr("dy", ".71em")
       .style("text-anchor", "end")
-      .text("Time (us)");;
+      .text(S_X_AXIS_TIME_MS);
       
     chartGroup.append("text")
       .attr("transform","translate(" + iWidth + "," + (iHeight - iSpace) + ")")
       //.attr("x", -(iSpace * 2))
       .attr("dy", ".71em")
       .style("text-anchor", "end")
-      .text(gsAxisXType);;
+      .text(gsAxisXType);
 }

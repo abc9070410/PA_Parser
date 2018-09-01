@@ -69,6 +69,10 @@ window.onload = main;
         text-align:center;
     }
     
+    .typeInfo{
+        text-align: left;
+    }
+    
     #idProgress {
       width: 100%;
       background-color: #ddd;
@@ -93,11 +97,6 @@ window.onload = main;
         font-size: 12px;
         fill:green;
     }
-    
-    dot {
-        fill:blue;
-    }
-
 
     path.line {
         fill: none;
@@ -147,6 +146,7 @@ window.onload = main;
     
     <p id="idLog"></p>
     
+    <p id="idCmdTypeInfo" class="typeInfo"></p>
     <div id="idCmdDurationTitle"></div>
 	<div id="idNCQCmdDurationTitle"></div>
     <div id="idDrawCmdDuration"></div><p></p>
