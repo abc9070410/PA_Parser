@@ -210,9 +210,9 @@ function parsePrimitive(asLineToken, iTextLineIdx)
     log("No." + giPAIndex + " PA - " + "NO." + giPrimitiveIndex + " Primitive");
                 
     var iLength = asLineToken.length;
-                
+
     for (var j = iTextLineIdx + 2; j < iLength; j++)
-    {
+    {        
         if (asLineToken[j].indexOf(TAG_PRIMITIVE[IDX_PRIMITIVE_SENDER][0]) > 0)
         {
             gaasPrimitiveSeq[giPrimitiveIndex][IDX_PRIMITIVE_SENDER] = asLineToken[j].replace(/_/g, "").replace("RD", "");
@@ -246,6 +246,124 @@ function parsePrimitive(asLineToken, iTextLineIdx)
     }
     
     giPrimitiveIndex++;
+    giPAIndex++;
+}
+
+
+function parseMultiPrimitive(asLineToken, iTextLineIdx)
+{
+    // Port: I1
+    // Start time: 3.633.641.753 (s)
+    // FIS Type................................27(H)
+    // Link Data ........
+    //                   __Initiator_______________________________RD__   __Target__________________________________RD__
+    //                     SATA_X_RDY                              +--+     XXXX                                    ++--
+    //                     SATA_X_RDY                              -++-     XXXX                                    --+-
+    //                     SATA_CONT                               +--+     XXXX                                    --++
+    //                     XXXX  (x15)                             -+--     XXXX  (x15)                             +-+-
+    //                     XXXX                                    +-+-     SATA_R_RDY                              -+--
+    //                     XXXX                                    -+++     SATA_R_RDY                              -+--
+    //                     XXXX                                    -+--     SATA_CONT                               -++-
+    //                     XXXX  (x32)                             +-++     XXXX  (x32)                             -++-
+    //                     SATA_SOF                                -++-     XXXX                                    -++-
+    //                     Payload                                 +++-                                          ++++
+    //                     8C92760B                                --++     XXXX                                    ++++
+    //                     SATA_EOF                                -+++     XXXX                                    ++--
+    //                     SATA_WTRM                               +--+     XXXX                                    ++--
+    //                     SATA_WTRM                               -++-     XXXX                                    ++++
+    //                     SATA_CONT                               +--+     XXXX                                    --++
+    //                     XXXX  (x6)                              -++-     XXXX  (x6)                              +-+-
+    //                     XXXX                                    -+--     SATA_R_IP                               -+++
+    //                     XXXX                                    -+--     SATA_R_IP                               +---
+    //                     XXXX                                    +---     SATA_CONT                               -++-
+    //                     XXXX  (x6)                              -++-     XXXX  (x6)                              ++-+
+    //                     XXXX                                    --++     SATA_R_OK                               -+++
+    //                     XXXX                                    -++-     SATA_R_OK                               +---
+    //                     XXXX                                    ---+     SATA_CONT                               -++-
+    //                     XXXX  (x31)                             ++-+     XXXX  (x31)                             -+-+
+    //                     SATA_SYNC                               +-++     XXXX                                    +++-
+    //                     SATA_SYNC                               +-++     XXXX                                    ++-+
+    //                     SATA_CONT                               +--+     XXXX                                    ++--
+    //                     XXXX  (x14)                             ++-+     XXXX  (x14)                             ++--
+    //                     XXXX                                    ++-+     SATA_SYNC                               +-++
+    // Duration Time: 3.493 (us)
+
+    initPA(giPAIndex, TYPE_MULTI_PRIMITIVE, giMultiPrimitiveIndex, asLineToken[iTextLineIdx]);
+    initMultiPrimitive(giMultiPrimitiveIndex);
+
+    log("No." + giPAIndex + " PA - " + "NO." + giMultiPrimitiveIndex + " MultiPrimitive");
+                
+    var iLength = asLineToken.length;
+    var bStartParseMulti = false;
+
+    for (var j = iTextLineIdx + 2; j < iLength; j++)
+    {     
+        var bField = false;
+        var asTemp = asLineToken[j].split(/\./);
+
+        for (var k = 0; k < IDX_MULTI_PRIMITIVE_AMOUNT; k++)
+        {
+            if (asTemp[0].indexOf(TAG_MULTI_PRIMITIVE[k][0]) == 0)
+            {
+                gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][TAG_MULTI_PRIMITIVE[k][1]] = asTemp[1].trim();
+                bField = true;
+            }
+        }
+
+        var bInfo = false;
+        asTemp = asLineToken[j].split(/:/);
+        
+        for (var k = 0; k < IDX_INFO_AMOUNT; k++)
+        {
+            if (asTemp[0].indexOf(TAG_INFO[k][0]) == 0)
+            {
+                var iAdditionIdx = IDX_MULTI_PRIMITIVE_AMOUNT + TAG_INFO[k][1];
+                gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][iAdditionIdx] = asTemp[1];
+                
+                log("match " + TAG_INFO[k][0] + " : " + iAdditionIdx + "," + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][iAdditionIdx]);
+                bInfo = true;
+            }
+        }
+        
+        if (asTemp[0].indexOf(S_MULTI_PRIMITIVE_FIRST_LINE) == 0)
+        {
+            bStartParseMulti = true;
+            continue; // start to parse from the next line
+        }
+        else if (asTemp[0].indexOf("_____________________________________________________________") == 0)
+        {
+            break; // the last line for this MultiPrimitive
+        }   
+        
+        if (!bInfo && !bField && bStartParseMulti)
+        {
+            //log("->" + asLineToken[j]);
+            var asTemp2 = asLineToken[j].split(/[\+\-]/);
+            var iTagIdx = 0;
+        
+            for (var k = 0; k < asTemp2.length; k++)
+            {
+                if (asTemp2[k])
+                {
+                    //log(k + ":" + asTemp2[k]);
+                    gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iTagIdx] = asTemp2[k].trim();
+                    
+                    if (iTagIdx == IDX_DEVICE_PRIMITIVE)
+                    {
+                        break; // parse done
+                    }
+                    
+                    iTagIdx++;
+                }
+            }
+            
+            log(" H:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][IDX_HOST_PRIMITIVE] +
+                " D:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][IDX_DEVICE_PRIMITIVE]);
+        }
+
+    }
+    
+    giMultiPrimitiveIndex++;
     giPAIndex++;
 }
 
@@ -298,6 +416,10 @@ function parseSequence()
             else if (isPrimitiveType(asToken[i + 4]))
             {
                 parsePrimitive(asToken, i);
+            }
+            else if (isMultiPrimitiveType(asToken, i))
+            {
+                parseMultiPrimitive(asToken, i);
             }
         }
         else if (asToken[i].indexOf(S_ATA_CMD) == 0) // ATA cmd
@@ -444,6 +566,8 @@ function buildCSV()
                 if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
                 {
                     addCSV(IDX_CSV_PARTIAL_RESPONSE, i, getDurationUS(i, i+1));
+                    
+                    setPartialType(i, isPMACK(i+1), isPMNAK(i+1));
                 }
                 else if ((i+1) < giPAIndex)
                 {
@@ -457,6 +581,8 @@ function buildCSV()
                 if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
                 {
                     addCSV(IDX_CSV_SLUMBER_RESPONSE, i, getDurationUS(i, i+1));
+                    
+                    setSlumberType(i, isPMACK(i+1), isPMNAK(i+1));
                 }
                 else if ((i+1) < giPAIndex)
                 {

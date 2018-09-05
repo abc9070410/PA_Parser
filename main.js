@@ -36,6 +36,11 @@ function initData()
     
     initCSV();
     
+    initTypeInfo();
+}
+
+function initTypeInfo()
+{
     for (var i = 0; i < I_CMD_TYPE_AMOUNT; i++)
     {
         gaiCmdDrawCnt[i] = 0;
@@ -44,6 +49,16 @@ function initData()
     for (var i = 0; i < I_COMWAKE_TYPE_AMOUNT; i++)
     {
         gaiComwakeDrawCnt[i] = 0;
+    }
+    
+    for (var i = 0; i < I_PARTIAL_TYPE_AMOUNT; i++)
+    {
+        gaiPartialDrawCnt[i] = 0;  
+    }  
+    
+    for (var i = 0; i < I_SLUMBER_TYPE_AMOUNT; i++)
+    {
+        gaiSlumberDrawCnt[i] = 0;
     }
 }
 
@@ -143,7 +158,7 @@ function parseText()
 {
     parseSequence();
 
-    checkVerification();
+    //checkVerification();
     doStatistics();
     
     moveStatusBar(100);

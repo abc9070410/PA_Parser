@@ -81,6 +81,8 @@ function getStartMS(i)
 {
     var iNS = getStartTime(i);
     
+    //err("NS:" + iNS + " US:" + (iNS / 1000) + " MS:" + (iNS / 1000000));
+    
     return iNS / 1000000;
 }
 
@@ -401,7 +403,7 @@ function setCmdType(i)
     var sOP = getCmdOP(i);
     var iClaimNo = getClaimNo(i);
 
-    var iCmdType = I_CMD_TYPE_OHTER;
+    var iCmdType = I_CMD_TYPE_OTHER;
     
     if (isNCQWrite(sOP))
     {
@@ -471,6 +473,72 @@ function getComwakeColor(iClaimNo)
     log(iClaimNo + ":" + getComwakeType(iClaimNo));
     return gaaComwakeColorQueue[getComwakeType(iClaimNo)][2];
 }
+
+function setPartialType(i, bACK, bNAK)
+{
+    var iClaimNo = getClaimNo(i);
+    
+    var iPartialType = I_PARTIAL_TYPE_OTHER;
+    
+    if (bACK)
+    {
+        iPartialType = I_PARTIAL_TYPE_ACK;
+    }
+    else if (bNAK)
+    {
+        iPartialType = I_PARTIAL_TYPE_NAK;
+    }
+    
+    gaiPartialDrawQueue[iClaimNo] = iPartialType;
+    gaiPartialDrawCnt[iPartialType]++;
+    
+    log("record " + iClaimNo + ":" + gaiPartialDrawQueue[iClaimNo]);
+}
+
+function getPartialType(iClaimNo)
+{
+    return gaiPartialDrawQueue[iClaimNo];
+}
+
+function getPartialColor(iClaimNo)
+{
+    log(iClaimNo + ":" + getPartialType(iClaimNo));
+    return gaaPartialColorQueue[getPartialType(iClaimNo)][2];
+}
+
+
+function setSlumberType(i, bACK, bNAK)
+{
+    var iClaimNo = getClaimNo(i);
+    
+    var iSlumberType = I_SLUMBER_TYPE_OTHER;
+    
+    if (bACK)
+    {
+        iSlumberType = I_SLUMBER_TYPE_ACK;
+    }
+    else if (bNAK)
+    {
+        iSlumberType = I_SLUMBER_TYPE_NAK;
+    }
+    
+    gaiSlumberDrawQueue[iClaimNo] = iSlumberType;
+    gaiSlumberDrawCnt[iSlumberType]++;
+    
+    log("record " + iClaimNo + ":" + gaiSlumberDrawQueue[iClaimNo]);
+}
+
+function getSlumberType(iClaimNo)
+{
+    return gaiSlumberDrawQueue[iClaimNo];
+}
+
+function getSlumberColor(iClaimNo)
+{
+    log(iClaimNo + ":" + getSlumberType(iClaimNo));
+    return gaaSlumberColorQueue[getSlumberType(iClaimNo)][2];
+}
+
 
 function isNOP(i)
 {
@@ -732,6 +800,20 @@ function isPrimitiveType(str)
             str.indexOf("Target") >= 0);
 }
 
+function isMultiPrimitiveType(asToken, index)
+{
+    for (var i = index + 4; i < index + 10; i++)
+    {
+        if (asToken[i].indexOf(S_MULTI_PRIMITIVE_FIRST_LINE) == 0)
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+
 function isLegalPAIdx(i)
 {
     return (i >= 0 && i < giPAIndex);
@@ -889,6 +971,18 @@ function initPrimitive(i)
     }
 }
 
+function initMultiPrimitive(i)
+{
+    gaasMultiPrimitiveSeq[i] = [];
+    
+    for (var j = 0; j < IDX_INFO_AMOUNT + IDX_MULTI_PRIMITIVE_AMOUNT; j++)
+    {
+        gaasMultiPrimitiveSeq[i][j] = "";
+    }
+    
+    gaasMultiPrimitiveSeq[i][IDX_MULTI_PRIMITIVE_QUEUE] = [];
+}
+
 function initOOB(i)
 {
     gaasOOBSeq[i] = [];
@@ -934,7 +1028,7 @@ function initPA(i, iSpecificType, iSpecificIdx, sLine)
         sClaimType = "ATA Cmd.";
     else if (iSpecificType == TYPE_FIS)
         sClaimType = "Transport";
-    else if (iSpecificType == TYPE_PRIMITIVE || iSpecificType == TYPE_OOB)
+    else if (iSpecificType == TYPE_PRIMITIVE || iSpecificType == TYPE_MULTI_PRIMITIVE || iSpecificType == TYPE_OOB)
         sClaimType = "Link";
     else 
         sClaimType = "NONE";

@@ -75,8 +75,9 @@ var AS_ATA_CMD_LIST = [
 "WRITE FPDMA QUEUED - 61h, DMA"
 ];
 
+var S_Y_AXIS_TIME_US = "Time (us)";
 var S_X_AXIS_NO = "NO"; // x axis is sequence of NO (ex. Link1, Link2, .... Link100)
-var S_X_AXIS_TIME_MS = "Time(MS)"; // x axis is sequence of time (ex. 10.00s, 10.01s, ... 60.00s)
+var S_X_AXIS_TIME_MS = "Time (MS)"; // x axis is sequence of time (ex. 10.00s, 10.01s, ... 60.00s)
 
 // ---------------------------    SVG Option    ---------------------------
 
@@ -174,6 +175,7 @@ var giOOBIndex = 0;
 var gaasOOBSeq = [];                // sequence of OOB
 
 
+
 var IDX_PRIMITIVE_SENDER = 0;
 var IDX_PRIMITIVE_TYPE = 1;
 var IDX_PRIMITIVE_AMOUNT = 2;
@@ -186,13 +188,37 @@ var TAG_PRIMITIVE = [
 var giPrimitiveIndex = 0;
 var gaasPrimitiveSeq = [];       // sequence of Primitive
 
+
+var S_MULTI_PRIMITIVE_FIRST_LINE = "__Initiator_______________________________RD__   __Target__________________________________RD__";
+
+var IDX_MULTI_PRIMITIVE_FIS_TYPE = 0;
+var IDX_MULTI_PRIMITIVE_ATA_COMMAND = 1;
+var IDX_MULTI_PRIMITIVE_SEC_COUNT = 2;
+var IDX_MULTI_PRIMITIVE_AMOUNT = 2;
+
+var IDX_MULTI_PRIMITIVE_QUEUE = IDX_INFO_AMOUNT + IDX_MULTI_PRIMITIVE_AMOUNT;
+var IDX_HOST_PRIMITIVE = 0;
+var IDX_DEVICE_PRIMITIVE = 1;
+
+var TAG_MULTI_PRIMITIVE = [
+    ["FIS Type", IDX_MULTI_PRIMITIVE_FIS_TYPE],
+    ["ATA Command", IDX_MULTI_PRIMITIVE_ATA_COMMAND],
+    ["SecCount", IDX_MULTI_PRIMITIVE_SEC_COUNT]
+];
+
+var giMultiPrimitiveIndex = 0;
+var gaasMultiPrimitiveSeq = [];       // sequence of Primitive
+
+
+
 var giCmdIndex = 0;
 var gaasCmdSeq = [];
 
 var TYPE_CMD = 1;
 var TYPE_FIS = 2;
 var TYPE_PRIMITIVE = 3;
-var TYPE_OOB = 4;
+var TYPE_MULTI_PRIMITIVE = 4;
+var TYPE_OOB = 5;
 
 var IDX_PA_TYPE = 0;    // include TYPE_CMD, TYPE_FIS, TYPE_PRIMITIVE and TYPE_OOB
 var IDX_PA_NO = 1;      // order no in specific sequence
@@ -238,7 +264,7 @@ var gbEnableLog = false;
 
 var gsNowFileName = "";
 
-var I_CMD_TYPE_OHTER = 0;
+var I_CMD_TYPE_OTHER = 0;
 var I_CMD_TYPE_NCQ_WRITE = 1;
 var I_CMD_TYPE_NCQ_READ = 2;
 var I_CMD_TYPE_NON_NCQ_WRITE = 3;
@@ -247,11 +273,35 @@ var I_CMD_TYPE_AMOUNT = 5;
 var gaiCmdDrawQueue = [];
 var gaiCmdDrawCnt = [];
 var gaaCmdColorQueue = [
-    ["Ohter Cmd", I_CMD_TYPE_OHTER, "Khaki"], 
+    ["Ohter Cmd", I_CMD_TYPE_OTHER, "Khaki"], 
     ["NCQ Write", I_CMD_TYPE_NCQ_WRITE, "YellowGreen"],
     ["NCQ Read", I_CMD_TYPE_NCQ_READ, "RoyalBlue"], 
     ["non-NCQ Write", I_CMD_TYPE_NON_NCQ_WRITE, "Coral"], 
     ["non-NCQ Read", I_CMD_TYPE_NON_NCQ_READ, "DarkOrchid"]];
+
+var I_PARTIAL_TYPE_OTHER = 0;
+var I_PARTIAL_TYPE_ACK = 1;
+var I_PARTIAL_TYPE_NAK = 2;
+var I_PARTIAL_TYPE_AMOUNT = 3;
+var gaiPartialDrawQueue = [];
+var gaiPartialDrawCnt = [];
+var gaaPartialColorQueue = [
+    ["reply other for Partial", I_PARTIAL_TYPE_OTHER, "Khaki"], 
+    ["reply ACK for Partial", I_PARTIAL_TYPE_ACK, "YellowGreen"],
+    ["reply NAK for Partial", I_PARTIAL_TYPE_NAK, "RoyalBlue"]
+    ];
+    
+var I_SLUMBER_TYPE_OTHER = 0;
+var I_SLUMBER_TYPE_ACK = 1;
+var I_SLUMBER_TYPE_NAK = 2;
+var I_SLUMBER_TYPE_AMOUNT = 3;
+var gaiSlumberDrawQueue = [];
+var gaiSlumberDrawCnt = [];
+var gaaSlumberColorQueue = [
+    ["reply other for Slumber", I_SLUMBER_TYPE_OTHER, "Khaki"], 
+    ["reply ACK for Slumber", I_SLUMBER_TYPE_ACK, "YellowGreen"],
+    ["reply NAK for Slumber", I_SLUMBER_TYPE_NAK, "RoyalBlue"]
+    ];
     
 var I_COMWAKE_TYPE_OTHER = 0;
 var I_COMWAKE_TYPE_PARTIAL = 1;
@@ -261,7 +311,7 @@ var I_COMWAKE_TYPE_AMOUNT = 4;
 var gaiComwakeDrawQueue = [];
 var gaiComwakeDrawCnt = [];
 var gaaComwakeColorQueue = [
-    ["Other Cases", I_COMWAKE_TYPE_OTHER, "Khaki"], 
+    ["COMWAKE for other cases", I_COMWAKE_TYPE_OTHER, "Khaki"], 
     ["COMWAKE for Partial", I_COMWAKE_TYPE_PARTIAL, "YellowGreen"], 
     ["COMWAKE for Slumber", I_COMWAKE_TYPE_SLUMBER, "RoyalBlue"], 
     ["COMWAKE for COMINIT", I_COMWAKE_TYPE_COMINIT, "Coral"]];

@@ -674,3 +674,90 @@ function checkDataFIS()
         updatePassResult("Data FIS 資料長度都符合預期");
     }
 }
+
+// SOFP Data FIS Header           Specified Test Pattern           CRC          EOFP
+
+/* Primitive
+
+SATA_X_RDY : 1. 之後一定要接 SATA_R_RDY
+
+SATA_SOF : 1. 之前一定要有 SATA_R_RDY (之前可以有 SATA_CONT, XXXX)
+
+SATA_WTRM : 1. 之後一定要有 SATA_R_OK
+
+HOLD : 1. 之後一定要接 
+            1. HOLDA
+            2. SYNC (Sync escape ?)
+            
+
+LT1: HL_SendChkRdy Transmit X_RDYP. 
+1. R_RDY P received from Phy. L_SendSOF 
+2. X_RDY P received from Phy. L_RcvWaitFifo 
+3. AnyDword other than (R_RDYP or X_RDYP) received from Phy layer. HL_SendChkRdy 
+4. PHYRDYn L_NoCommErr2 
+
+
+
+9.6  Link Layer State Machine 
+1.  LRESET:  Link layer COMRESET or COMINIT signal 
+2.  PHYRDYn: The negation of the PHYRDY signal. 
+3.  PHYRDY: Phy status as defined in section 7.1.2. 
+
+var X_RDY = "SATA_X_RDY";
+var R_RDY = "SATA_R_RDY";
+var ALIGN = "ALIGN";
+var SYNC = "SATA_SYNC";
+var WTRM = "SATA_WTRM";
+var CONT = "SATA_CONT";
+var R_IP = "SATA_R_IP";
+var R_OK = "SATA_R_OK";
+var XXXX = "XXXX";
+var SOF = "SATA_SOF";
+var EOF = "SATA_EOF";
+var PAYLOAD = "Payload";
+
+if (
+
+L1: L_IDLE Transmit SYNC
+L2: L_SyncEscape Transmit SYNC.
+
+LS1: L_NoCommErr osthy not ready error to Transport layer. 
+LS2: L_NoComm  Transmit ALIGN
+LS3: L_SendAlign  Transmit ALIGN .
+LS4: L_RESET Reset Link state to initial conditions. 
+
+LT1: HL_SendChkRdy  Transmit X_RDY .
+LT2: DL_SendChkRdy  Transmit X_RDY .
+LT3: L_SendSOF  Transmit SOF
+LT4: L_SendData  Transmit data Dword 
+LT5: L_RcvrHold  Transmit HOLDA .
+LT6: L_SendHold  Transmit HOLD .
+LT7: L_SendCRC  Transmit CRC. 
+LT8: L_SendEOF  Transmit EOF .
+LT9: L_Wait  Transmit WTRM .
+
+LR1: L_RcvChkRdy  Transmit R_RDY .
+LR2: L_RcvWaitFifo  Transmit SYNC .
+LR3: L_RcvData  Transmit R_IP or DMAT
+LR4: L_Hold  Transmit HOLD .
+LR5: L_RcvHold  Transmit HOLDA or DMAT
+LR6: L_RcvEOF  Transmit R_IP .
+LR7: L_GoodCRC  Transmit R_IP .
+LR8: L_GoodEnd  Transmit R_OK .
+LR9: L_BadEnd  Transmit R_ERR .
+
+LPM1: L_TPMPartial  TransmitMREQ_P .
+LPM2: L_TPMSlumber  TransmitMREQ_S .
+LPM3: L_PMOff  TransmitMACK
+LPM4: L_PMDeny  TransmitMNAK .
+LPM5: L_ChkPhyRdy  Assertartial/Slumber tohy layer (as appropriate). 
+LPM6: L_NoCommPower  Maintainartial/Slumber assertion (as appropriate).
+LPM7: L_WakeUp1  Negate bothartial and Slumber. 
+LPM8: L_WakeUp2  Transmit ALIGN .
+LPM9: L_NoPmnak  Transmit SYNC .
+
+
+
+
+
+*/

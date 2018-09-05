@@ -102,6 +102,54 @@ function updateCmdTypeInfo()
     document.getElementById("idCmdTypeInfo").innerHTML = sInfo;
 }
 
+function updateComwakeTypeInfo()
+{
+    var sInfo = "";
+    
+    for (var i = 0; i < gaaComwakeColorQueue.length; i++)
+    {
+        sInfo += "<div style='color:" + gaaComwakeColorQueue[i][2] + ";'>共" + gaiComwakeDrawCnt[i] + "次" + gaaComwakeColorQueue[i][0] + "</div>"
+    }
+    
+    document.getElementById("idComwakeTypeInfo").innerHTML = sInfo;
+}
+
+function updateComwakeTypeInfo()
+{
+    var sInfo = "";
+    
+    for (var i = 0; i < gaaComwakeColorQueue.length; i++)
+    {
+        sInfo += "<div style='color:" + gaaComwakeColorQueue[i][2] + ";'>共" + gaiComwakeDrawCnt[i] + "次" + gaaComwakeColorQueue[i][0] + "</div>"
+    }
+    
+    document.getElementById("idComwakeTypeInfo").innerHTML = sInfo;
+}
+
+function updatePartialTypeInfo()
+{
+    var sInfo = "";
+    
+    for (var i = 0; i < gaaPartialColorQueue.length; i++)
+    {
+        sInfo += "<div style='color:" + gaaPartialColorQueue[i][2] + ";'>共" + gaiPartialDrawCnt[i] + "次" + gaaPartialColorQueue[i][0] + "</div>"
+    }
+    
+    document.getElementById("idPartialTypeInfo").innerHTML = sInfo;
+}
+
+function updateSlumberTypeInfo()
+{
+    var sInfo = "";
+    
+    for (var i = 0; i < gaaSlumberColorQueue.length; i++)
+    {
+        sInfo += "<div style='color:" + gaaSlumberColorQueue[i][2] + ";'>共" + gaiSlumberDrawCnt[i] + "次" + gaaSlumberColorQueue[i][0] + "</div>"
+    }
+    
+    document.getElementById("idSlumberTypeInfo").innerHTML = sInfo;
+}
+
 
 function moveStatusBar() {
   var elem = document.getElementById("idStatusBar");   
@@ -129,11 +177,15 @@ function drawCSV()
     }
     if (gasCSV[IDX_CSV_PARTIAL_RESPONSE].length > 0)
     {
+        updatePartialTypeInfo();
+        
         document.getElementById("idPartialResponseTitle").innerHTML = "Partial Response Time (us)";
         drawSVG("idDrawPartialResponse", IDX_CSV_PARTIAL_RESPONSE);
     }
     if (gasCSV[IDX_CSV_SLUMBER_RESPONSE].length > 0)
     {
+        updateSlumberTypeInfo();
+        
         document.getElementById("idSlumberResponseTitle").innerHTML = "Slumber Response Time (us)";
         drawSVG("idDrawSlumberResponse", IDX_CSV_SLUMBER_RESPONSE);
     }
@@ -144,6 +196,8 @@ function drawCSV()
     }
     if (gasCSV[IDX_CSV_COMWAKE_RESPONSE].length > 0)
     {
+        updateComwakeTypeInfo();
+        
         document.getElementById("idComwakeResponseTitle").innerHTML = "COMWAKE Response Time (us)";
         drawSVG("idDrawComwakeResponse", IDX_CSV_COMWAKE_RESPONSE);
     }
@@ -294,7 +348,7 @@ function drawSVG(sDrawID, iCSVIdx)
       .attr("y", -35)
       .attr("dy", ".71em")
       .style("text-anchor", "end")
-      .text(S_X_AXIS_TIME_MS);
+      .text(S_Y_AXIS_TIME_US);
       
     chartGroup.append("text")
       .attr("transform","translate(" + iWidth + "," + (iHeight - iSpace) + ")")
