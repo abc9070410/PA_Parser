@@ -9,6 +9,9 @@ var S_NOT_FOUND = " Not Found ";
 var I_DMA_DATA_FIS = 0;
 var I_PIO_DATA_FIS = 1;
 
+var I_HOST = 0;
+var I_DEVICE = 1;
+
 var AS_ATA_CMD_LIST = [
 "CFA ERASE SECTORS - C0h, non-data",
 "CFA TRANSLATE SECTOR - 87h, PIO data-in",
@@ -207,9 +210,7 @@ var TAG_MULTI_PRIMITIVE = [
 ];
 
 var giMultiPrimitiveIndex = 0;
-var gaasMultiPrimitiveSeq = [];       // sequence of Primitive
-
-
+var gaasMultiPrimitiveSeq = [];       // sequence of Multi Primitive
 
 var giCmdIndex = 0;
 var gaasCmdSeq = [];
@@ -316,4 +317,63 @@ var gaaComwakeColorQueue = [
     ["COMWAKE for Slumber", I_COMWAKE_TYPE_SLUMBER, "RoyalBlue"], 
     ["COMWAKE for COMINIT", I_COMWAKE_TYPE_COMINIT, "Coral"]];
 
-    
+
+// for FSM of Primitive
+
+var X_RDY = "SATA_X_RDY";
+var R_RDY = "SATA_R_RDY";
+var ALIGN = "ALIGN";
+var SYNC = "SATA_SYNC";
+var WTRM = "SATA_WTRM";
+var CONT = "SATA_CONT";
+var R_IP = "SATA_R_IP";
+var R_OK = "SATA_R_OK";
+var R_ERR = "SATA_R_ERR";
+var XXXX = "XXXX";
+var SOF = "SATA_SOF";
+var EOF = "SATA_EOF";
+var PAYLOAD = "Payload";
+var HOLDA = "SATA_HOLDA";
+var HOLD = "SATA_HOLD";
+var PMREQ_P = "";
+var PMREQ_S = "";
+var PMACK = "";
+var PMNAK = "";
+
+var LIDLE = "LIDLE"; // L1 Transmit SYNC
+var LSyncEscape = "LSyncEscape"; // L2 Transmit SYNC.
+
+var LNoCommErr = "LNoCommErr"; // LS1 osthy not ready error to Transport layer. 
+var LNoComm = "LNoComm"; // LS2 Transmit ALIGN
+var LSendAlign = "LSendAlign"; // LS3 Transmit ALIGN .
+var LRESET = "LRESET"; // LS4 Reset Link state to initial conditions. 
+
+var HLSendChkRdy = "HLSendChkRdy"; // LT1 Transmit XRDY .
+var DLSendChkRdy = "DLSendChkRdy"; // LT2 Transmit XRDY .
+var LSendSOF = "LSendSOF"; // LT3 Transmit SOF
+var LSendData = "LSendData"; // LT4 Transmit data Dword 
+var LRcvrHold = "LRcvrHold"; // LT5 Transmit HOLDA .
+var LSendHold = "LSendHold"; // LT6 Transmit HOLD .
+var LSendCRC = "LSendCRC"; // LT7 Transmit CRC. 
+var LSendEOF = "LSendEOF"; // LT8 Transmit EOF .
+var LWait = "LWait"; // LT9 Transmit WTRM .
+
+var LRcvChkRdy = "LRcvChkRdy"; // LR1 Transmit RRDY .
+var LRcvWaitFifo = "LRcvWaitFifo"; // LR2 Transmit SYNC .
+var LRcvData = "LRcvData"; // LR3 Transmit RIP or DMAT
+var LHold = "LHold"; // LR4 Transmit HOLD .
+var LRcvHold = "LRcvHold"; // LR5 Transmit HOLDA or DMAT
+var LRcvEOF = "LRcvEOF"; // LR6 Transmit RIP .
+var LGoodCRC = "LGoodCRC"; // LR7 Transmit RIP .
+var LGoodEnd = "LGoodEnd"; // LR8 Transmit ROK .
+var LBadEnd = "LBadEnd"; // LR9 Transmit RERR .
+
+var LTPMPartial = "LTPMPartial"; // LPM1 TransmitMREQP .
+var LTPMSlumber = "LTPMSlumber"; // LPM2 TransmitMREQS .
+var LPMOff = "LPMOff"; // LPM3 Transmit PMACK
+var LPMDeny = "LPMDeny"; // LPM4 Transmit PMNAK .
+var LChkPhyRdy = "LChkPhyRdy"; // LPM5 Assert artial/Slumber to phy layer (as appropriate). 
+var LNoCommPower = "LNoCommPower"; // LPM6 Maintain artial/Slumber assertion (as appropriate).
+var LWakeUp1 = "LWakeUp1"; // LPM7 Negate both artial and Slumber. 
+var LWakeUp2 = "LWakeUp2"; // LPM8 Transmit ALIGN .
+var LNoPmnak = "LNoPmnak"; // LPM9 Transmit SYNC .

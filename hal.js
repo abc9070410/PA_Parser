@@ -944,6 +944,136 @@ function getClaim(i)
     return "" + getClaimType(i) + getClaimNo(i);
 }
 
+// about Multiple Primitive
+
+function isMultiPrimitive(i)
+{
+    return isLegalPAIdx(i) && (gaasPASeq[i][IDX_PA_TYPE] == TYPE_MULTI_PRIMITIVE);
+}
+
+function getPrimitiveFSM(i)
+{
+    if (!isMultiPrimitive(i))
+    {
+        return S_NOT_FOUND;
+    }
+    
+    var j = gaasPASeq[i][IDX_PA_NO];
+
+    return gaasMultiPrimitiveSeq[j][IDX_MULTI_PRIMITIVE_QUEUE];
+}
+
+function getNowPrimitiveFSM(i, iDirection, iFSMIdx)
+{
+    var aasFSM = getPrimitiveFSM(i);
+    
+    if (aasFSM == S_NOT_FOUND)
+    {
+        return S_NOT_FOUND;
+    }
+    
+    var iDirectionIdx = (iDirection == I_HOST) ? IDX_HOST_PRIMITIVE : IDX_DEVICE_PRIMITIVE;
+    
+    err("###" + aasFSM[iFSMIdx]);
+    
+    return aasFSM[iFSMIdx][iDirectionIdx];
+}
+
+function getNowState()
+{   
+}
+
+function getPrimitiveState(sPrimitive)
+{
+    if (sPrimitive == SYNC)
+    {
+        return LIDLE;
+        return LSyncEscape;
+        return LRcvWaitFifo;
+        return LNoPmnak;
+    }
+    else if (sPrimitive == ALIGN)
+    {
+        return LNoComm;
+        return LSendAlign;
+        return LWakeUp2;
+    }
+    else if (sPrimitive == X_RDY)
+    {
+        return HLSendChkRdy;
+        return DLSendChkRdy;
+    }
+    else if (sPrimitive == SOF)
+    {
+        return LSendSOF;
+    }
+    else if (sPrimitive == HOLDA)
+    {
+        return LRcvrHold;
+        return LRcvHold;
+    }
+    else if (sPrimitive == HOLD)
+    {
+        return LSendHold;
+    }
+    else if (sPrimitive == EOF)
+    {
+        return LSendEOF;
+    }
+    else if (sPrimitive == WTRM)
+    {
+        return LWait;
+    }
+    else if (sPrimitive == R_RDY)
+    {
+        return LRcvChkRdy;
+    }
+    else if (sPrimitive == R_IP)
+    {
+        return LRcvData;
+        return LRcvEOF;
+        return LGoodCRC;
+    }
+    else if (sPrimitive == R_OK)
+    {
+        return LGoodEnd;
+    }
+    else if (sPrimitive == R_ERR)
+    {
+        return LBadEnd;
+    }
+    else if (sPrimitive == PMREQ_P)
+    {
+        return LTPMPartial;
+    }
+    else if (sPrimitive == PMREQ_S)
+    {
+        return LTPMSlumber;
+    }
+    else if (sPrimitive == PMACK)
+    {
+        return LPMOff;
+    }
+    else if (sPrimitive == PMNAK)
+    {
+        return LPMDeny;
+    }
+    else
+    {
+        return "";
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 function initFailInfo()
 {

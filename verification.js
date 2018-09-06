@@ -675,6 +675,23 @@ function checkDataFIS()
     }
 }
 
+
+function detectPrimitiveFSM()
+{
+    log("start detect PrimitiveFSM");
+    
+    for (var i = 0; i < giPAIndex; i++)
+    {
+        if (isMultiPrimitive(i))
+        {
+            err(i);
+            err("--->" + getNowPrimitiveFSM(i, I_DEVICE, 0));
+        }
+    }
+    
+    log("detect detectPrimitiveFSM done");
+}
+
 // SOFP Data FIS Header           Specified Test Pattern           CRC          EOFP
 
 /* Primitive
@@ -703,18 +720,6 @@ LT1: HL_SendChkRdy Transmit X_RDYP.
 2.  PHYRDYn: The negation of the PHYRDY signal. 
 3.  PHYRDY: Phy status as defined in section 7.1.2. 
 
-var X_RDY = "SATA_X_RDY";
-var R_RDY = "SATA_R_RDY";
-var ALIGN = "ALIGN";
-var SYNC = "SATA_SYNC";
-var WTRM = "SATA_WTRM";
-var CONT = "SATA_CONT";
-var R_IP = "SATA_R_IP";
-var R_OK = "SATA_R_OK";
-var XXXX = "XXXX";
-var SOF = "SATA_SOF";
-var EOF = "SATA_EOF";
-var PAYLOAD = "Payload";
 
 if (
 

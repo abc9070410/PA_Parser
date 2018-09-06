@@ -295,6 +295,8 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                 
     var iLength = asLineToken.length;
     var bStartParseMulti = false;
+    
+    var iFSMIdx = 0;
 
     for (var j = iTextLineIdx + 2; j < iLength; j++)
     {     
@@ -320,7 +322,8 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                 var iAdditionIdx = IDX_MULTI_PRIMITIVE_AMOUNT + TAG_INFO[k][1];
                 gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][iAdditionIdx] = asTemp[1];
                 
-                log("match " + TAG_INFO[k][0] + " : " + iAdditionIdx + "," + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][iAdditionIdx]);
+                log("match " + TAG_INFO[k][0] + " : " + iAdditionIdx + "," + 
+                    gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][iAdditionIdx]);
                 bInfo = true;
             }
         }
@@ -328,6 +331,7 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
         if (asTemp[0].indexOf(S_MULTI_PRIMITIVE_FIRST_LINE) == 0)
         {
             bStartParseMulti = true;
+            
             continue; // start to parse from the next line
         }
         else if (asTemp[0].indexOf("_____________________________________________________________") == 0)
@@ -345,8 +349,13 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
             {
                 if (asTemp2[k])
                 {
+                    if (iTagIdx == IDX_HOST_PRIMITIVE)
+                    {
+                        gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx] = [];
+                    }
+                    //err("DD:"+gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx]);
                     //log(k + ":" + asTemp2[k]);
-                    gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iTagIdx] = asTemp2[k].trim();
+                    gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][iTagIdx] = asTemp2[k].trim();
                     
                     if (iTagIdx == IDX_DEVICE_PRIMITIVE)
                     {
@@ -357,12 +366,22 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                 }
             }
             
-            log(" H:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][IDX_HOST_PRIMITIVE] +
-                " D:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][IDX_DEVICE_PRIMITIVE]);
+            if (iTagIdx != 0)
+            {
+                //err(asLineToken[j]);
+                //log(iFSMIdx + "::" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx]);
+                log(giPAIndex + ":" + giMultiPrimitiveIndex + ":" + iFSMIdx);
+                log(" H:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_HOST_PRIMITIVE] +
+                    " D:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_DEVICE_PRIMITIVE]);
+            
+                iFSMIdx++;
+            }
         }
 
     }
     
+    log(giPAIndex + ":" + giMultiPrimitiveIndex + "共有" + iFSMIdx + "行 Primitive")
+
     giMultiPrimitiveIndex++;
     giPAIndex++;
 }

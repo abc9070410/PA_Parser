@@ -159,6 +159,7 @@ function parseText()
     parseSequence();
 
     //checkVerification();
+    detectFSM();
     doStatistics();
     
     moveStatusBar(100);
@@ -177,6 +178,12 @@ function checkVerification()
     checkAutoActivate();
     checkPIOMultiple();
     checkDataFIS();
+}
+
+function detectFSM()
+{
+    detectPrimitiveFSM();
+    
 }
 
 function doStatistics()
