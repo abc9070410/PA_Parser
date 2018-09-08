@@ -344,15 +344,15 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
             //log("->" + asLineToken[j]);
             var asTemp2 = asLineToken[j].split(/[\+\-]/);
             var iTagIdx = 0;
-        
+            
+            gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx] = [];
+            
             for (var k = 0; k < asTemp2.length; k++)
             {
+                // log(k + "[" + asTemp2[k] + "]");
                 if (asTemp2[k])
                 {
-                    if (iTagIdx == IDX_HOST_PRIMITIVE)
-                    {
-                        gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx] = [];
-                    }
+                    iTagIdx = (k == 0) ? IDX_HOST_PRIMITIVE : IDX_DEVICE_PRIMITIVE;
                     
                     var sPrimitive = asTemp2[k].replace("<<", "").replace(">>", "").trim();
                     
@@ -375,12 +375,27 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
 
                     gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][iTagIdx] = sPrimitive;
                     
+                    //log(k + ":" + iTagIdx + ":" + sPrimitive);
+                    
                     if (iTagIdx == IDX_DEVICE_PRIMITIVE)
                     {
+                        // get Device but no Host case : Host is "" -> duplicate previous Host Primitive
+                        if (!gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_HOST_PRIMITIVE])
+                        {
+                            if (iFSMIdx != 0)
+                            {
+                                sPrimitive = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][IDX_HOST_PRIMITIVE];
+                            }
+                            else
+                            {
+                                sPrimitive = XXXX;
+                            }
+                            
+                            gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_HOST_PRIMITIVE] = sPrimitive;
+                        }
+                        
                         break; // parse done
                     }
-                    
-                    iTagIdx++;
                 }
             }
             
@@ -398,7 +413,7 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
 
     }
     
-    log(giPAIndex + ":" + giMultiPrimitiveIndex + "共有" + iFSMIdx + "行 Primitive")
+    err(giPAIndex + ":" + giMultiPrimitiveIndex + "共有" + iFSMIdx + "行 Primitive")
 
     giMultiPrimitiveIndex++;
     giPAIndex++;

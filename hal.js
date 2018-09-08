@@ -993,7 +993,7 @@ function getNowState()
 {   
 }
 
-function getPrimitiveState(sPrimitive)
+function getPrimitiveState(sPrimitive, iDirection)
 {
     if (sPrimitive == SYNC)
     {
@@ -1005,15 +1005,15 @@ function getPrimitiveState(sPrimitive)
     }
     else if (sPrimitive == X_RDY)
     {
-        return [HL_SendChkRdy, DL_SendChkRdy];
+        return (iDirection == I_HOST) ? [HL_SendChkRdy] : [DL_SendChkRdy];
     }
     else if (sPrimitive == SOF)
     {
-        return L_SendSOF;
+        return [L_SendSOF];
     }
     else if (sPrimitive == PAYLOAD)
     {
-        return L_SendData;
+        return [L_SendData];
     }
     else if (sPrimitive == HOLDA)
     {
@@ -1021,19 +1021,19 @@ function getPrimitiveState(sPrimitive)
     }
     else if (sPrimitive == HOLD)
     {
-        return L_SendHold;
+        return [L_SendHold];
     }
     else if (sPrimitive == EOF)
     {
-        return L_SendEOF;
+        return [L_SendEOF];
     }
     else if (sPrimitive == WTRM)
     {
-        return L_Wait;
+        return [L_Wait];
     }
     else if (sPrimitive == R_RDY)
     {
-        return L_RcvChkRdy;
+        return [L_RcvChkRdy];
     }
     else if (sPrimitive == R_IP)
     {
@@ -1041,35 +1041,35 @@ function getPrimitiveState(sPrimitive)
     }
     else if (sPrimitive == R_OK)
     {
-        return L_GoodEnd;
+        return [L_GoodEnd];
     }
     else if (sPrimitive == R_ERR)
     {
-        return L_BadEnd;
+        return [L_BadEnd];
     }
     else if (sPrimitive == PMREQ_P)
     {
-        return L_TPMPartial;
+        return [L_TPMPartial];
     }
     else if (sPrimitive == PMREQ_S)
     {
-        return L_TPMSlumber;
+        return [L_TPMSlumber];
     }
     else if (sPrimitive == PMACK)
     {
-        return L_PMOff;
+        return [L_PMOff];
     }
     else if (sPrimitive == PMNAK)
     {
-        return L_PMDeny;
+        return [L_PMDeny];
     }
     else if (sPrimitive == CRC)
     {
-        return L_SendCRC;
+        return [L_SendCRC];
     }
     else
     {
-        return S_NOT_FOUND;
+        return [S_NOT_FOUND];
     }
 }
 
@@ -1080,11 +1080,18 @@ function showErrorPrimitiveInfo(sNowState, sNextState, asExpectNextState)
     err("Actual:" + sNextState);
 }
 
-function getExpectedNextPrimitiveState(sNowState)
+function getDirectionText(iDirection)
+{
+    return (iDirection == I_HOST) ? "Host " : "Device ";
+}
+
+function getExpectedNextPrimitiveState(sNowState, iDirection)
 {
     if (sNowState == L_IDLE)
     {
-        return [HL_SendChkRdy, DL_SendChkRdy, L_TPMPartial, L_TPMSlumber, 
+        var sSendChkRdy = (iDirection == I_HOST) ? HL_SendChkRdy : DL_SendChkRdy;
+        
+        return [sSendChkRdy, L_TPMPartial, L_TPMSlumber, 
                 L_RcvWaitFifo, L_PMOff, L_PMDeny, L_IDLE, L_NoComm];
     }
     else if (sNowState == L_SyncEscape)
@@ -1212,9 +1219,44 @@ function getExpectedNextPrimitiveState(sNowState)
     }
 }
 
-function isIllegalNextPrimitiveState(sNowState, sNextState)
+
+function isIllegalPrimitiveChange(sPrevPrimitive, sPrimitive, iDirection)
 {
-    var asExpectNextState = getExpectedNextPrimitiveState(sNowState);
+    if (sPrevPrimitive == XXXX || sPrevPrimitive == sPrimitive)
+    {
+        return false; // skip checking 
+    }
+    
+    var asState = getPrimitiveState(sPrimitive, iDirection);
+    var asPrevState = getPrimitiveState(sPrevPrimitive, iDirection);
+    
+    for (var i = 0; i < asPrevState.length; i++)
+    {
+        var asExpectedState = getExpectedNextPrimitiveState(asPrevState[i], iDirection);
+        
+        //err(asPrevState[i] + " next Expectd:" + asExpectedState);
+        
+        for (var j = 0; j < asExpectedState.length; j++)
+        {
+            for (var k = 0; k < asState.length; k++)
+            {
+                if (asExpectedState[j] == asState[k])
+                {
+                    return false;
+                }
+            }
+        }
+    }
+    
+    err(getDirectionText(iDirection) + ":" + sPrimitive + "(" + asState + 
+        ") 不能接在 " + sPrevPrimitive + "(" + asPrevState + ") 的後面");
+    
+    return true;
+}
+
+function isIllegalNextPrimitiveState(sNowState, sNextState, iDirection)
+{
+    var asExpectNextState = getExpectedNextPrimitiveState(sNowState, iDirection);
         
     for (var i = 0; i < asExpectNextState.length; i++)
     {

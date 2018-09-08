@@ -691,6 +691,7 @@ function formatPrimitiveFSM()
     log("format PrimitiveFSM done");
 }
 
+
 function detectPrimitiveFSM()
 {
     log("start detect PrimitiveFSM");
@@ -700,20 +701,39 @@ function detectPrimitiveFSM()
         if (isMultiPrimitive(i))
         {
             var aasFSM = getPrimitiveFSM(i);
+            var sPrevHostPrimitive = null;
+            var sPrevDevicePrimitive = null;
             
-            err(i);
+            err("No." + i + " MultiPrimitive");
             //err("--->" + aasFSM);
             //err("--->" + getNowPrimitiveFSM(i, I_DEVICE, 0));
+
             
             for (var j = 0; j < aasFSM.length; j++)
             {
                 var sHostPrimitive = getHostPrimitive(aasFSM, j);
                 var sDevicePrimitive = getDevicePrimitive(aasFSM, j);
                 
-                var sHostState = getPrimitiveState(sHostPrimitive);
-                var sDeviceState = getPrimitiveState(sDevicePrimitive);
+                var asHostState = getPrimitiveState(sHostPrimitive, I_HOST);
+                var asDeviceState = getPrimitiveState(sDevicePrimitive, I_DEVICE);
                 
-                //err(j + " H:" + sHostPrimitive + "->" + sHostState + "   D:" + sDevicePrimitive + "->" + sDeviceState);
+                if (j > 0)
+                {
+                    if (isIllegalPrimitiveChange(sPrevHostPrimitive, sHostPrimitive, I_HOST))
+                    {
+                        err("X");
+                    }
+                    if (isIllegalPrimitiveChange(sPrevDevicePrimitive, sDevicePrimitive, I_DEVICE))
+                    {
+                        err("X");
+                    }
+                    
+                }
+                
+                err(j + " H:" + sHostPrimitive + "->" + asHostState + " \t\tD:" + sDevicePrimitive + "->" + asDeviceState);
+                
+                sPrevHostPrimitive = sHostPrimitive;
+                sPrevDevicePrimitive = sDevicePrimitive;
             }
         }
     }
