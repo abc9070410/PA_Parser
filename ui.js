@@ -30,7 +30,7 @@ function downloadLog()
 {
     var currentDateTime = getNowTimeStr();
 
-    downloadText(gsNowFileName + "_LOG_" + currentDateTime + ".log", gsTempLog);
+    downloadText2(gsNowFileName + "_LOG_" + currentDateTime + ".log", gsTempLog);
     
     log("download log done");
 }
@@ -39,17 +39,35 @@ function downloadErrLog()
 {
     var currentDateTime = getNowTimeStr();
 
-    downloadText(gsNowFileName + "_ERR_" + currentDateTime + ".log", gsTempErrLog);
+    downloadText2(gsNowFileName + "_ERR_" + currentDateTime + ".log", gsTempErrLog);
     
     log("download err log done");
 }
 
+// only small text
 function downloadText(filename, text) 
 {
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
     element.setAttribute('download', filename);
 
+    element.style.display = 'none';
+
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+}
+
+// could support big text
+function downloadText2(filename, sText) 
+{
+    var objurl = URL.createObjectURL(new Blob([sText] , {type:'text/plain'}));
+ 
+    var element = document.createElement('a');
+    element.download = filename;
+    element.href = objurl;
     element.style.display = 'none';
 
     document.body.appendChild(element);

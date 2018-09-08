@@ -721,16 +721,16 @@ function detectPrimitiveFSM()
                 {
                     if (isIllegalPrimitiveChange(sPrevHostPrimitive, sHostPrimitive, I_HOST))
                     {
-                        err("X");
+                        err(getClaim(i) + " 的第 " + j + " 行 Primitive 發生錯誤");
                     }
                     if (isIllegalPrimitiveChange(sPrevDevicePrimitive, sDevicePrimitive, I_DEVICE))
                     {
-                        err("X");
+                        err(getClaim(i) + " 的第 " + j + " 行 Primitive 發生錯誤");
                     }
                     
                 }
                 
-                err(j + " H:" + sHostPrimitive + "->" + asHostState + " \t\tD:" + sDevicePrimitive + "->" + asDeviceState);
+                log(j + " H:" + sHostPrimitive + "->" + asHostState + " \t\tD:" + sDevicePrimitive + "->" + asDeviceState);
                 
                 sPrevHostPrimitive = sHostPrimitive;
                 sPrevDevicePrimitive = sDevicePrimitive;
