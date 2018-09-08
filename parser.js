@@ -353,9 +353,27 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                     {
                         gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx] = [];
                     }
-                    //err("DD:"+gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx]);
-                    //log(k + ":" + asTemp2[k]);
-                    gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][iTagIdx] = asTemp2[k].trim();
+                    
+                    var sPrimitive = asTemp2[k].replace("<<", "").replace(">>", "").trim();
+                    
+                    // # format rule
+                    //                     
+                    // Rule 1: replace SATA_CONT or XXXX or "" with the previous Primitive
+                    if (sPrimitive == CONT || sPrimitive.indexOf(XXXX) == 0 || sPrimitive == "")
+                    {
+                        if (iFSMIdx != 0)
+                        {
+                            sPrimitive = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx];
+                        }
+                    }
+                    
+                    // Rule 2: replace CRC value with "CRC"
+                    if (iFSMIdx != 0 && gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx] == PAYLOAD)
+                    {
+                        sPrimitive = CRC;
+                    }
+
+                    gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][iTagIdx] = sPrimitive;
                     
                     if (iTagIdx == IDX_DEVICE_PRIMITIVE)
                     {
@@ -450,6 +468,18 @@ function parseSequence()
     }
     
     log("all " + giPAIndex + " PA parse done ");
+    
+    printParsedData();
+}
+
+function printParsedData()
+{
+    err("共有 " + giPAIndex + " 組資料:\r\n------------------------\r\n"
+    + giCmdIndex + " 組 ATA cmd\r\n"
+    + giOOBIndex + " 組 OOB\r\n"
+    + giFISIndex + " 組 FIS\r\n"
+    + giPrimitiveIndex + " 組 Primitive\r\n"
+    + giMultiPrimitiveIndex + " 組 MultiPrimitive\r\n------------------------\r\n");
 }
 
 function errCSV(iPAIdx, sMessage)

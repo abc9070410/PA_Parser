@@ -675,6 +675,21 @@ function checkDataFIS()
     }
 }
 
+function formatPrimitiveFSM()
+{
+    log("start format PrimitiveFSM");
+    
+    for (var i = 0; i < giPAIndex; i++)
+    {
+        if (isMultiPrimitive(i))
+        {
+            var aasFSM = getPrimitiveFSM(i);
+            
+        }
+    }
+    
+    log("format PrimitiveFSM done");
+}
 
 function detectPrimitiveFSM()
 {
@@ -684,8 +699,22 @@ function detectPrimitiveFSM()
     {
         if (isMultiPrimitive(i))
         {
+            var aasFSM = getPrimitiveFSM(i);
+            
             err(i);
-            err("--->" + getNowPrimitiveFSM(i, I_DEVICE, 0));
+            //err("--->" + aasFSM);
+            //err("--->" + getNowPrimitiveFSM(i, I_DEVICE, 0));
+            
+            for (var j = 0; j < aasFSM.length; j++)
+            {
+                var sHostPrimitive = getHostPrimitive(aasFSM, j);
+                var sDevicePrimitive = getDevicePrimitive(aasFSM, j);
+                
+                var sHostState = getPrimitiveState(sHostPrimitive);
+                var sDeviceState = getPrimitiveState(sDevicePrimitive);
+                
+                //err(j + " H:" + sHostPrimitive + "->" + sHostState + "   D:" + sDevicePrimitive + "->" + sDeviceState);
+            }
         }
     }
     

@@ -963,6 +963,16 @@ function getPrimitiveFSM(i)
     return gaasMultiPrimitiveSeq[j][IDX_MULTI_PRIMITIVE_QUEUE];
 }
 
+function getHostPrimitive(aasFSM, iFSMIdx)
+{
+    return aasFSM[iFSMIdx][IDX_HOST_PRIMITIVE];
+}
+
+function getDevicePrimitive(aasFSM, iFSMIdx)
+{
+    return aasFSM[iFSMIdx][IDX_DEVICE_PRIMITIVE];
+}
+
 function getNowPrimitiveFSM(i, iDirection, iFSMIdx)
 {
     var aasFSM = getPrimitiveFSM(i);
@@ -987,84 +997,236 @@ function getPrimitiveState(sPrimitive)
 {
     if (sPrimitive == SYNC)
     {
-        return LIDLE;
-        return LSyncEscape;
-        return LRcvWaitFifo;
-        return LNoPmnak;
+        return [L_IDLE, L_SyncEscape, L_RcvWaitFifo, L_NoPmnak];
     }
     else if (sPrimitive == ALIGN)
     {
-        return LNoComm;
-        return LSendAlign;
-        return LWakeUp2;
+        return [L_NoComm, L_SendAlign, L_WakeUp2];
     }
     else if (sPrimitive == X_RDY)
     {
-        return HLSendChkRdy;
-        return DLSendChkRdy;
+        return [HL_SendChkRdy, DL_SendChkRdy];
     }
     else if (sPrimitive == SOF)
     {
-        return LSendSOF;
+        return L_SendSOF;
+    }
+    else if (sPrimitive == PAYLOAD)
+    {
+        return L_SendData;
     }
     else if (sPrimitive == HOLDA)
     {
-        return LRcvrHold;
-        return LRcvHold;
+        return [L_RcvrHold, L_RcvHold];
     }
     else if (sPrimitive == HOLD)
     {
-        return LSendHold;
+        return L_SendHold;
     }
     else if (sPrimitive == EOF)
     {
-        return LSendEOF;
+        return L_SendEOF;
     }
     else if (sPrimitive == WTRM)
     {
-        return LWait;
+        return L_Wait;
     }
     else if (sPrimitive == R_RDY)
     {
-        return LRcvChkRdy;
+        return L_RcvChkRdy;
     }
     else if (sPrimitive == R_IP)
     {
-        return LRcvData;
-        return LRcvEOF;
-        return LGoodCRC;
+        return [L_RcvData, L_RcvEOF, L_GoodCRC];
     }
     else if (sPrimitive == R_OK)
     {
-        return LGoodEnd;
+        return L_GoodEnd;
     }
     else if (sPrimitive == R_ERR)
     {
-        return LBadEnd;
+        return L_BadEnd;
     }
     else if (sPrimitive == PMREQ_P)
     {
-        return LTPMPartial;
+        return L_TPMPartial;
     }
     else if (sPrimitive == PMREQ_S)
     {
-        return LTPMSlumber;
+        return L_TPMSlumber;
     }
     else if (sPrimitive == PMACK)
     {
-        return LPMOff;
+        return L_PMOff;
     }
     else if (sPrimitive == PMNAK)
     {
-        return LPMDeny;
+        return L_PMDeny;
+    }
+    else if (sPrimitive == CRC)
+    {
+        return L_SendCRC;
     }
     else
     {
-        return "";
+        return S_NOT_FOUND;
     }
 }
 
+function showErrorPrimitiveInfo(sNowState, sNextState, asExpectNextState)
+{
+    err("Now state:" + sNowState);
+    err("Expected:" + asExpectNextState);
+    err("Actual:" + sNextState);
+}
 
+function getExpectedNextPrimitiveState(sNowState)
+{
+    if (sNowState == L_IDLE)
+    {
+        return [HL_SendChkRdy, DL_SendChkRdy, L_TPMPartial, L_TPMSlumber, 
+                L_RcvWaitFifo, L_PMOff, L_PMDeny, L_IDLE, L_NoComm];
+    }
+    else if (sNowState == L_SyncEscape)
+    {
+        return [L_SyncEscape, L_IDLE, L_NoComm];
+    }
+    else if (sNowState == L_NoComm)
+    {
+        return [L_NoComm, L_SendAlign];
+    }
+    else if (sNowState == L_SendAlign)
+    {
+        return [L_NoComm, L_IDLE];
+    }
+    else if (sNowState == HL_SendChkRdy)
+    {
+        return [L_SendSOF, L_RcvWaitFifo, HL_SendChkRdy, L_NoComm];
+    }
+    else if (sNowState == DL_SendChkRdy)
+    {
+        return [L_SendSOF, DL_SendChkRdy, L_NoComm];
+    }
+    else if (sNowState == L_SendSOF)
+    {
+        return [L_SendData, L_NoComm, L_IDLE];
+    }
+    else if (sNowState == L_SendData)
+    {
+        return [L_SendData, L_RcvHold, L_SendHold, L_SendCRC, 
+                L_IDLE, L_NoComm, L_SyncEscape];
+    }
+    else if (sNowState == L_SendHold)
+    {
+        return [L_SendData, L_RcvHold, L_SendHold, 
+                L_SendCRC, L_IDLE, L_NoComm, L_SyncEscape];
+    }
+    else if (sNowState == L_SendCRC)
+    {
+        return [L_SendEOF, L_NoComm, L_IDLE];
+    }
+    else if (sNowState == L_SendEOF)
+    {
+        return [L_Wait, L_NoComm, L_IDLE];
+    }
+    else if (sNowState == L_Wait)
+    {
+        return [L_IDLE, L_Wait, L_NoComm];
+    }
+    else if (sNowState == L_RcvChkRdy)
+    {
+        return [L_RcvChkRdy, L_RcvData, L_IDLE, L_NoComm];
+    }
+    else if (sNowState == L_RcvWaitFifo)
+    {
+        return [L_RcvChkRdy, L_RcvWaitFifo, L_IDLE, L_NoComm];
+    }
+    else if (sNowState == L_RcvData)
+    {
+        return [L_RcvData, L_Hold, L_RcvHold, L_RcvEOF, 
+                L_BadEnd, L_IDLE, L_RcvData, L_NoComm, L_SyncEscape];
+    }
+    else if (sNowState == L_Hold)
+    {
+        return [L_RcvData, L_RcvHold, L_Hold, L_NoComm, 
+                L_IDLE, L_SyncEscape];
+    }
+    else if (sNowState == L_RcvHold)
+    {
+        return [L_RcvData, L_RcvHold, L_RcvEOF, L_IDLE,
+                L_NoComm, L_SyncEscape];
+    }
+    else if (sNowState == L_RcvEOF)
+    {
+        return [L_RcvEOF, L_GoodCRC, L_BadEnd, L_NoComm];
+    }
+    else if (sNowState == L_GoodCRC)
+    {
+        return [L_GoodEnd, L_BadEnd, L_GoodCRC, L_NoComm, L_IDLE];
+    }
+    else if (sNowState == L_GoodEnd)
+    {
+        return [L_IDLE, L_GoodEnd, L_NoComm];
+    }
+    else if (sNowState == L_BadEnd)
+    {
+        return [L_IDLE, L_BadEnd, L_NoComm];
+    }
+    else if (sNowState == L_TPMPartial)
+    {
+        return [L_ChkPhyRdy, L_RcvWaitFifo, L_TPMPartial, 
+                L_IDLE, L_NoComm, L_NoPmnak];
+    }
+    else if (sNowState == L_TPMSlumber)
+    {
+        return [L_ChkPhyRdy, L_RcvWaitFifo, L_TPMSlumber,
+                L_IDLE, L_NoComm, L_NoPmnak];
+    }
+    else if (sNowState == L_PMOff)
+    {
+        return [L_ChkPhyRdy, L_PMOff];
+    }
+    else if (sNowState == L_PMDeny)
+    {
+        return [L_PMDeny, L_IDLE, L_NoComm];
+    }
+    else if (sNowState == L_ChkPhyRdy)
+    {
+        return [L_ChkPhyRdy, L_NoComm];
+    }
+    else if (sNowState == L_NoComm)
+    {
+        return [];
+    }
+    else if (sNowState == L_WakeUp2)
+    {
+        return [L_IDLE, L_NoComm];
+    }
+    else if (sNowState == L_NoPmnak)
+    {
+        return [L_NoPmnak, L_IDLE];
+    }
+    else
+    {
+        return [S_NOT_FOUND];
+    }
+}
+
+function isIllegalNextPrimitiveState(sNowState, sNextState)
+{
+    var asExpectNextState = getExpectedNextPrimitiveState(sNowState);
+        
+    for (var i = 0; i < asExpectNextState.length; i++)
+    {
+        if (sNextState == asExpectNextState[i])
+        {
+            return false;
+        }
+    }
+
+    showErrorPrimitiveInfo(sNowState, sNextState, asExpectNextState);
+    return true;
+}
 
 
 
