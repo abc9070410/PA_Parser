@@ -78,6 +78,78 @@ var AS_ATA_CMD_LIST = [
 "WRITE FPDMA QUEUED - 61h, DMA"
 ];
 
+
+
+// for FSM of Primitive
+
+var X_RDY = "SATA_X_RDY";
+var R_RDY = "SATA_R_RDY";
+var ALIGN = "ALIGN 0";
+var SYNC = "SATA_SYNC";
+var WTRM = "SATA_WTRM";
+var CONT = "SATA_CONT";
+var R_IP = "SATA_R_IP";
+var R_OK = "SATA_R_OK";
+var R_ERR = "SATA_R_ERR";
+var XXXX = "XXXX";
+var SOF = "SATA_SOF";
+var EOF = "SATA_EOF";
+var PAYLOAD = "Payload";
+var HOLDA = "SATA_HOLDA";
+var HOLD = "SATA_HOLD";
+var PMREQ_P = "";
+var PMREQ_S = "";
+var PMACK = "";
+var PMNAK = "";
+
+var XXXX = "XXXX";
+var CRC = "CRC";
+
+
+
+var L_IDLE = "L_IDLE"; // L1 Transmit SYNC
+var L_SyncEscape = "L_SyncEscape"; // L2 Transmit SYNC.
+
+var L_NoCommErr = "L_NoCommErr"; // LS1 osthy not ready error to Transport layer. 
+var L_NoComm = "L_NoComm"; // LS2 Transmit ALIGN
+var L_SendAlign = "L_SendAlign"; // LS3 Transmit ALIGN .
+var L_RESET = "L_RESET"; // LS4 Reset Link state to initial conditions. 
+
+var HL_SendChkRdy = "HL_SendChkRdy"; // LT1 Transmit XRDY .
+var DL_SendChkRdy = "DL_SendChkRdy"; // LT2 Transmit XRDY .
+var L_SendSOF = "L_SendSOF"; // LT3 Transmit SOF
+var L_SendData = "L_SendData"; // LT4 Transmit data Dword 
+var L_RcvrHold = "L_RcvrHold"; // LT5 Transmit HOLDA .
+var L_SendHold = "L_SendHold"; // LT6 Transmit HOLD .
+var L_SendCRC = "L_SendCRC"; // LT7 Transmit CRC. 
+var L_SendEOF = "L_SendEOF"; // LT8 Transmit EOF .
+var L_Wait = "L_Wait"; // LT9 Transmit WTRM .
+
+var L_RcvChkRdy = "L_RcvChkRdy"; // LR1 Transmit RRDY .
+var L_RcvWaitFifo = "L_RcvWaitFifo"; // LR2 Transmit SYNC .
+var L_RcvData = "L_RcvData"; // LR3 Transmit RIP or DMAT
+var L_Hold = "L_Hold"; // LR4 Transmit HOLD .
+var L_RcvHold = "L_RcvHold"; // LR5 Transmit HOLDA or DMAT
+var L_RcvEOF = "L_RcvEOF"; // LR6 Transmit RIP .
+var L_GoodCRC = "L_GoodCRC"; // LR7 Transmit RIP .
+var L_GoodEnd = "L_GoodEnd"; // LR8 Transmit ROK .
+var L_BadEnd = "L_BadEnd"; // LR9 Transmit RERR .
+
+var L_TPMPartial = "L_TPMPartial"; // LPM1 TransmitMREQP .
+var L_TPMSlumber = "L_TPMSlumber"; // LPM2 TransmitMREQS .
+var L_PMOff = "L_PMOff"; // LPM3 Transmit PMACK
+var L_PMDeny = "L_PMDeny"; // LPM4 Transmit PMNAK .
+var L_ChkPhyRdy = "L_ChkPhyRdy"; // LPM5 Assert artial/Slumber to phy layer (as appropriate). 
+var L_NoCommPower = "L_NoCommPower"; // LPM6 Maintain artial/Slumber assertion (as appropriate).
+var L_WakeUp1 = "L_WakeUp1"; // LPM7 Negate both artial and Slumber. 
+var L_WakeUp2 = "L_WakeUp2"; // LPM8 Transmit ALIGN .
+var L_NoPmnak = "L_NoPmnak"; // LPM9 Transmit SYNC .
+
+var S_TYPE_PARSE = "解析階段";
+var S_TYPE_VERIFY = "驗證階段";
+var S_TYPE_DETECT = "檢查階段";
+var S_TYPE_STAT = "統計階段";
+
 var S_Y_AXIS_TIME_US = "Time (us)";
 var S_X_AXIS_NO = "NO"; // x axis is sequence of NO (ex. Link1, Link2, .... Link100)
 var S_X_AXIS_TIME_MS = "Time (MS)"; // x axis is sequence of time (ex. 10.00s, 10.01s, ... 60.00s)
@@ -193,6 +265,7 @@ var gaasPrimitiveSeq = [];       // sequence of Primitive
 
 
 var S_MULTI_PRIMITIVE_FIRST_LINE = "__Initiator_______________________________RD__   __Target__________________________________RD__";
+var S_MULTI_PRIMITIVE_FIRST_LINE2 = "__Host____________________________________RD__   __Device__________________________________RD__";
 
 var IDX_MULTI_PRIMITIVE_FIS_TYPE = 0;
 var IDX_MULTI_PRIMITIVE_ATA_COMMAND = 1;
@@ -261,10 +334,6 @@ var gasCSV = [];
 var gasCSVType = [];
 var gaaiCSVPAIdx = [];
 
-var gbEnableLog = false;
-
-var gsNowFileName = "";
-
 var I_CMD_TYPE_OTHER = 0;
 var I_CMD_TYPE_NCQ_WRITE = 1;
 var I_CMD_TYPE_NCQ_READ = 2;
@@ -316,69 +385,23 @@ var gaaComwakeColorQueue = [
     ["COMWAKE for Partial", I_COMWAKE_TYPE_PARTIAL, "YellowGreen"], 
     ["COMWAKE for Slumber", I_COMWAKE_TYPE_SLUMBER, "RoyalBlue"], 
     ["COMWAKE for COMINIT", I_COMWAKE_TYPE_COMINIT, "Coral"]];
+    
+var gbEnableLog = false;
 
+var gsNowFileName = "";
 
-// for FSM of Primitive
+//
+// Error flag
+//
+var gbParseError = false; // skip verify if there exists parse error
+var gbVerifyError = false;
+var gbDetectError = false;
+var gbStatisticError = false;
 
-var X_RDY = "SATA_X_RDY";
-var R_RDY = "SATA_R_RDY";
-var ALIGN = "ALIGN 0";
-var SYNC = "SATA_SYNC";
-var WTRM = "SATA_WTRM";
-var CONT = "SATA_CONT";
-var R_IP = "SATA_R_IP";
-var R_OK = "SATA_R_OK";
-var R_ERR = "SATA_R_ERR";
-var XXXX = "XXXX";
-var SOF = "SATA_SOF";
-var EOF = "SATA_EOF";
-var PAYLOAD = "Payload";
-var HOLDA = "SATA_HOLDA";
-var HOLD = "SATA_HOLD";
-var PMREQ_P = "";
-var PMREQ_S = "";
-var PMACK = "";
-var PMNAK = "";
-
-var XXXX = "XXXX";
-var CRC = "CRC";
-
-
-
-var L_IDLE = "L_IDLE"; // L1 Transmit SYNC
-var L_SyncEscape = "L_SyncEscape"; // L2 Transmit SYNC.
-
-var L_NoCommErr = "L_NoCommErr"; // LS1 osthy not ready error to Transport layer. 
-var L_NoComm = "L_NoComm"; // LS2 Transmit ALIGN
-var L_SendAlign = "L_SendAlign"; // LS3 Transmit ALIGN .
-var L_RESET = "L_RESET"; // LS4 Reset Link state to initial conditions. 
-
-var HL_SendChkRdy = "HL_SendChkRdy"; // LT1 Transmit XRDY .
-var DL_SendChkRdy = "DL_SendChkRdy"; // LT2 Transmit XRDY .
-var L_SendSOF = "L_SendSOF"; // LT3 Transmit SOF
-var L_SendData = "L_SendData"; // LT4 Transmit data Dword 
-var L_RcvrHold = "L_RcvrHold"; // LT5 Transmit HOLDA .
-var L_SendHold = "L_SendHold"; // LT6 Transmit HOLD .
-var L_SendCRC = "L_SendCRC"; // LT7 Transmit CRC. 
-var L_SendEOF = "L_SendEOF"; // LT8 Transmit EOF .
-var L_Wait = "L_Wait"; // LT9 Transmit WTRM .
-
-var L_RcvChkRdy = "L_RcvChkRdy"; // LR1 Transmit RRDY .
-var L_RcvWaitFifo = "L_RcvWaitFifo"; // LR2 Transmit SYNC .
-var L_RcvData = "L_RcvData"; // LR3 Transmit RIP or DMAT
-var L_Hold = "L_Hold"; // LR4 Transmit HOLD .
-var L_RcvHold = "L_RcvHold"; // LR5 Transmit HOLDA or DMAT
-var L_RcvEOF = "L_RcvEOF"; // LR6 Transmit RIP .
-var L_GoodCRC = "L_GoodCRC"; // LR7 Transmit RIP .
-var L_GoodEnd = "L_GoodEnd"; // LR8 Transmit ROK .
-var L_BadEnd = "L_BadEnd"; // LR9 Transmit RERR .
-
-var L_TPMPartial = "L_TPMPartial"; // LPM1 TransmitMREQP .
-var L_TPMSlumber = "L_TPMSlumber"; // LPM2 TransmitMREQS .
-var L_PMOff = "L_PMOff"; // LPM3 Transmit PMACK
-var L_PMDeny = "L_PMDeny"; // LPM4 Transmit PMNAK .
-var L_ChkPhyRdy = "L_ChkPhyRdy"; // LPM5 Assert artial/Slumber to phy layer (as appropriate). 
-var L_NoCommPower = "L_NoCommPower"; // LPM6 Maintain artial/Slumber assertion (as appropriate).
-var L_WakeUp1 = "L_WakeUp1"; // LPM7 Negate both artial and Slumber. 
-var L_WakeUp2 = "L_WakeUp2"; // LPM8 Transmit ALIGN .
-var L_NoPmnak = "L_NoPmnak"; // LPM9 Transmit SYNC .
+//
+// output CSV file (recommend CSVFileView : https://www.nirsoft.net/utils/csv_file_view.html )
+//
+var giErrorCSVIdx = 0;
+var gsErrorCSV = "錯誤編號,錯誤地點,錯誤類別,錯誤原因,錯誤描述\n";
+var gsTempError = "";
+var gsVerifyCSV = "";

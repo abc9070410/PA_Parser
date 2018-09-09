@@ -692,6 +692,14 @@ function formatPrimitiveFSM()
 }
 
 
+function setDetectError(iPAIdx, sErrMsg, sDescription)
+{
+    //err(sErrMsg);
+    gbDetectError = true;
+    
+    addErrorCSV(iPAIdx, S_TYPE_DETECT, sErrMsg, sDescription);
+}
+
 function detectPrimitiveFSM()
 {
     log("start detect PrimitiveFSM");
@@ -721,13 +729,12 @@ function detectPrimitiveFSM()
                 {
                     if (isIllegalPrimitiveChange(sPrevHostPrimitive, sHostPrimitive, I_HOST))
                     {
-                        err(getClaim(i) + " 的第 " + j + " 行 Primitive 發生錯誤");
+                        setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生錯誤");
                     }
                     if (isIllegalPrimitiveChange(sPrevDevicePrimitive, sDevicePrimitive, I_DEVICE))
                     {
-                        err(getClaim(i) + " 的第 " + j + " 行 Primitive 發生錯誤");
+                        setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生錯誤");
                     }
-                    
                 }
                 
                 log(j + " H:" + sHostPrimitive + "->" + asHostState + " \t\tD:" + sDevicePrimitive + "->" + asDeviceState);
@@ -768,50 +775,6 @@ LT1: HL_SendChkRdy Transmit X_RDYP.
 1.  LRESET:  Link layer COMRESET or COMINIT signal 
 2.  PHYRDYn: The negation of the PHYRDY signal. 
 3.  PHYRDY: Phy status as defined in section 7.1.2. 
-
-
-if (
-
-L1: L_IDLE Transmit SYNC
-L2: L_SyncEscape Transmit SYNC.
-
-LS1: L_NoCommErr osthy not ready error to Transport layer. 
-LS2: L_NoComm  Transmit ALIGN
-LS3: L_SendAlign  Transmit ALIGN .
-LS4: L_RESET Reset Link state to initial conditions. 
-
-LT1: HL_SendChkRdy  Transmit X_RDY .
-LT2: DL_SendChkRdy  Transmit X_RDY .
-LT3: L_SendSOF  Transmit SOF
-LT4: L_SendData  Transmit data Dword 
-LT5: L_RcvrHold  Transmit HOLDA .
-LT6: L_SendHold  Transmit HOLD .
-LT7: L_SendCRC  Transmit CRC. 
-LT8: L_SendEOF  Transmit EOF .
-LT9: L_Wait  Transmit WTRM .
-
-LR1: L_RcvChkRdy  Transmit R_RDY .
-LR2: L_RcvWaitFifo  Transmit SYNC .
-LR3: L_RcvData  Transmit R_IP or DMAT
-LR4: L_Hold  Transmit HOLD .
-LR5: L_RcvHold  Transmit HOLDA or DMAT
-LR6: L_RcvEOF  Transmit R_IP .
-LR7: L_GoodCRC  Transmit R_IP .
-LR8: L_GoodEnd  Transmit R_OK .
-LR9: L_BadEnd  Transmit R_ERR .
-
-LPM1: L_TPMPartial  TransmitMREQ_P .
-LPM2: L_TPMSlumber  TransmitMREQ_S .
-LPM3: L_PMOff  TransmitMACK
-LPM4: L_PMDeny  TransmitMNAK .
-LPM5: L_ChkPhyRdy  Assertartial/Slumber tohy layer (as appropriate). 
-LPM6: L_NoCommPower  Maintainartial/Slumber assertion (as appropriate).
-LPM7: L_WakeUp1  Negate bothartial and Slumber. 
-LPM8: L_WakeUp2  Transmit ALIGN .
-LPM9: L_NoPmnak  Transmit SYNC .
-
-
-
 
 
 */

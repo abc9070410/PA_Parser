@@ -804,7 +804,8 @@ function isMultiPrimitiveType(asToken, index)
 {
     for (var i = index + 4; i < index + 10; i++)
     {
-        if (asToken[i].indexOf(S_MULTI_PRIMITIVE_FIRST_LINE) == 0)
+        if (asToken[i].indexOf(S_MULTI_PRIMITIVE_FIRST_LINE) == 0 ||
+            asToken[i].indexOf(S_MULTI_PRIMITIVE_FIRST_LINE2) == 0)
         {
             return true;
         }
@@ -1248,8 +1249,8 @@ function isIllegalPrimitiveChange(sPrevPrimitive, sPrimitive, iDirection)
         }
     }
     
-    err(getDirectionText(iDirection) + ":" + sPrimitive + "(" + asState + 
-        ") 不能接在 " + sPrevPrimitive + "(" + asPrevState + ") 的後面");
+    gsTempError = getDirectionText(iDirection) + ":" + sPrimitive + "(" + asState + 
+        ") 不能接在 " + sPrevPrimitive + "(" + asPrevState + ") 的後面";
     
     return true;
 }
@@ -1389,7 +1390,7 @@ function initCSV()
     log("init CSV done");
 }
 
-function addCSV(iCSVIdx, iNo, iValue)
+function addDrawCSV(iCSVIdx, iNo, iValue)
 {
     var i;
 
@@ -1426,6 +1427,21 @@ function getNowTimeStr()
             today.getHours() + "_" + 
             today.getMinutes() + "_" + 
             today.getSeconds();
+}
+
+// about error csv
+
+function formatTextInCSV(sText)
+{
+    return sText.replace(/,/g, "/");
+}
+
+function addErrorCSV(i, sType, sReason, sDescription)
+{
+    gsErrorCSV += giErrorCSVIdx + "," + getClaim(i) + "," + sType + "," + 
+                  formatTextInCSV(sReason) + "," + formatTextInCSV(sDescription) + "\n";
+    
+    giErrorCSVIdx++;
 }
 
 // about log

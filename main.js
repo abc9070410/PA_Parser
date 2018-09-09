@@ -11,11 +11,14 @@ function initUI()
     
     updateTitle();
     
-    hideDIV("idDownloadLog");
-    hideDIV("idDownloadErrLog");
     hideDIV("idResultTitle");
     hideDIV("idLogTitle");
     hideDIV("idProgress");
+        
+    hideDIV("idDownloadLog");
+    hideDIV("idDownloadErrLog");
+    hideDIV("idDownloadErrCSV");    
+    
 }
 
 function initData()
@@ -64,9 +67,11 @@ function initTypeInfo()
 
 function addListener()
 {
+    document.getElementById("idLoadFile").addEventListener('change', handleFileSelect, false);
+    
     document.getElementById("idDownloadLog").addEventListener("click", downloadLog, false);
     document.getElementById("idDownloadErrLog").addEventListener("click", downloadErrLog, false);
-    document.getElementById("idLoadFile").addEventListener('change', handleFileSelect, false);
+    document.getElementById("idDownloadErrCSV").addEventListener("click", downloadErrCSV, false);
 }
 
 
@@ -158,15 +163,20 @@ function parseText()
 {
     parseSequence();
 
-    //checkVerification();
-    detectFSM();
-    doStatistics();
+    if (!gbParseError)
+    {
+        checkVerification();
+        detectFSM();
+        doStatistics();
+    }
     
     moveStatusBar(100);
 
     showDIV("idLogTitle");
+    
     showDIV("idDownloadLog");
     showDIV("idDownloadErrLog");
+    showDIV("idDownloadErrCSV");
 }
 
 function checkVerification()

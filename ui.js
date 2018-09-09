@@ -24,7 +24,22 @@ function updateTitle()
     //document.getElementById("idTitle").innerHTML = asTemp[asTemp.length - 2].replace(/_/g, " ");
 }
 
+function showDownloadButton()
+{
+    for (var i = 0; i < asDownloadButtonID.length; i++)
+    {
+        showDIV(asDownloadButtonID[i]);
+    }
+}
 
+
+function hideDownloadButton()
+{
+    for (var i = 0; i < asDownloadButtonID.length; i++)
+    {
+        hideDIV(asDownloadButtonID[i]);
+    }
+}
 
 function downloadLog()
 {
@@ -42,6 +57,15 @@ function downloadErrLog()
     downloadText2(gsNowFileName + "_ERR_" + currentDateTime + ".log", gsTempErrLog);
     
     log("download err log done");
+}
+
+function downloadErrCSV()
+{
+    var currentDateTime = getNowTimeStr();
+
+    downloadText2(gsNowFileName + "_ERR_" + currentDateTime + ".csv", gsErrorCSV);
+    
+    log("download err csv done");
 }
 
 // only small text
