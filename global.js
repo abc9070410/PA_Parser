@@ -405,3 +405,11 @@ var giErrorCSVIdx = 0;
 var gsErrorCSV = "錯誤編號,錯誤地點,錯誤類別,錯誤原因,錯誤描述\n";
 var gsTempError = "";
 var gsVerifyCSV = "";
+
+
+//
+// Policy
+//
+var gbSkipParseError = true; // true : still do verify & detect even if there exists parse error
+                             // false: do nothing if there exists parse error
+var gbAllowR_RDYtoR_OK = true; // true: allow R_RDY -> R_OK

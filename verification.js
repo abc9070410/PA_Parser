@@ -712,6 +712,9 @@ function detectPrimitiveFSM()
             var sPrevHostPrimitive = null;
             var sPrevDevicePrimitive = null;
             
+            var sPrevHostNonAlign = null; // previous primitive whitch is not ALIGN
+            var sPrevDeviceNonAlign = null; // previous primitive whitch is not ALIGN
+            
             err("No." + i + " MultiPrimitive");
             //err("--->" + aasFSM);
             //err("--->" + getNowPrimitiveFSM(i, I_DEVICE, 0));
@@ -727,11 +730,8 @@ function detectPrimitiveFSM()
                 
                 if (j > 0)
                 {
-                    if (isIllegalPrimitiveChange(sPrevHostPrimitive, sHostPrimitive, I_HOST))
-                    {
-                        setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生錯誤");
-                    }
-                    if (isIllegalPrimitiveChange(sPrevDevicePrimitive, sDevicePrimitive, I_DEVICE))
+                    if (isIllegalPrimitiveChange(sHostPrimitive, sPrevHostPrimitive, sPrevHostNonAlign, I_HOST) ||
+                        isIllegalPrimitiveChange(sDevicePrimitive, sPrevDevicePrimitive, sPrevDeviceNonAlign, I_DEVICE))
                     {
                         setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生錯誤");
                     }
@@ -741,6 +741,15 @@ function detectPrimitiveFSM()
                 
                 sPrevHostPrimitive = sHostPrimitive;
                 sPrevDevicePrimitive = sDevicePrimitive;
+                
+                if (sHostPrimitive != ALIGN)
+                {
+                    sPrevHostNonAlign = sHostPrimitive;
+                }
+                if (sDevicePrimitive != ALIGN)
+                {
+                    sPrevDeviceNonAlign = sDevicePrimitive;
+                }
             }
         }
     }

@@ -804,6 +804,11 @@ function isMultiPrimitiveType(asToken, index)
 {
     for (var i = index + 4; i < index + 10; i++)
     {
+        if (!asToken[i])
+        {
+            break;
+        }
+        
         if (asToken[i].indexOf(S_MULTI_PRIMITIVE_FIRST_LINE) == 0 ||
             asToken[i].indexOf(S_MULTI_PRIMITIVE_FIRST_LINE2) == 0)
         {
@@ -1088,140 +1093,149 @@ function getDirectionText(iDirection)
 
 function getExpectedNextPrimitiveState(sNowState, iDirection)
 {
+    var asExpectedState = [];
+    
     if (sNowState == L_IDLE)
     {
         var sSendChkRdy = (iDirection == I_HOST) ? HL_SendChkRdy : DL_SendChkRdy;
         
-        return [sSendChkRdy, L_TPMPartial, L_TPMSlumber, 
+        asExpectedState = [sSendChkRdy, L_TPMPartial, L_TPMSlumber, 
                 L_RcvWaitFifo, L_PMOff, L_PMDeny, L_IDLE, L_NoComm];
     }
     else if (sNowState == L_SyncEscape)
     {
-        return [L_SyncEscape, L_IDLE, L_NoComm];
+        asExpectedState = [L_SyncEscape, L_IDLE, L_NoComm];
     }
     else if (sNowState == L_NoComm)
     {
-        return [L_NoComm, L_SendAlign];
+        asExpectedState = [L_NoComm, L_SendAlign];
     }
     else if (sNowState == L_SendAlign)
     {
-        return [L_NoComm, L_IDLE];
+        asExpectedState = [L_NoComm, L_IDLE];
     }
     else if (sNowState == HL_SendChkRdy)
     {
-        return [L_SendSOF, L_RcvWaitFifo, HL_SendChkRdy, L_NoComm];
+        asExpectedState = [L_SendSOF, L_RcvWaitFifo, HL_SendChkRdy, L_NoComm];
     }
     else if (sNowState == DL_SendChkRdy)
     {
-        return [L_SendSOF, DL_SendChkRdy, L_NoComm];
+        asExpectedState = [L_SendSOF, DL_SendChkRdy, L_NoComm];
     }
     else if (sNowState == L_SendSOF)
     {
-        return [L_SendData, L_NoComm, L_IDLE];
+        asExpectedState = [L_SendData, L_NoComm, L_IDLE];
     }
     else if (sNowState == L_SendData)
     {
-        return [L_SendData, L_RcvHold, L_SendHold, L_SendCRC, 
+        asExpectedState = [L_SendData, L_RcvHold, L_SendHold, L_SendCRC, 
                 L_IDLE, L_NoComm, L_SyncEscape];
     }
     else if (sNowState == L_SendHold)
     {
-        return [L_SendData, L_RcvHold, L_SendHold, 
+        asExpectedState = [L_SendData, L_RcvHold, L_SendHold, 
                 L_SendCRC, L_IDLE, L_NoComm, L_SyncEscape];
     }
     else if (sNowState == L_SendCRC)
     {
-        return [L_SendEOF, L_NoComm, L_IDLE];
+        asExpectedState = [L_SendEOF, L_NoComm, L_IDLE];
     }
     else if (sNowState == L_SendEOF)
     {
-        return [L_Wait, L_NoComm, L_IDLE];
+        asExpectedState = [L_Wait, L_NoComm, L_IDLE];
     }
     else if (sNowState == L_Wait)
     {
-        return [L_IDLE, L_Wait, L_NoComm];
+        asExpectedState = [L_IDLE, L_Wait, L_NoComm];
     }
     else if (sNowState == L_RcvChkRdy)
     {
-        return [L_RcvChkRdy, L_RcvData, L_IDLE, L_NoComm];
+        asExpectedState = [L_RcvChkRdy, L_RcvData, L_IDLE, L_NoComm];
+        
+        if (gbAllowR_RDYtoR_OK)
+        {
+            asExpectedState[asExpectedState.length] = L_GoodEnd;
+        }
     }
     else if (sNowState == L_RcvWaitFifo)
     {
-        return [L_RcvChkRdy, L_RcvWaitFifo, L_IDLE, L_NoComm];
+        asExpectedState = [L_RcvChkRdy, L_RcvWaitFifo, L_IDLE, L_NoComm];
     }
     else if (sNowState == L_RcvData)
     {
-        return [L_RcvData, L_Hold, L_RcvHold, L_RcvEOF, 
+        asExpectedState = [L_RcvData, L_Hold, L_RcvHold, L_RcvEOF, 
                 L_BadEnd, L_IDLE, L_RcvData, L_NoComm, L_SyncEscape];
     }
     else if (sNowState == L_Hold)
     {
-        return [L_RcvData, L_RcvHold, L_Hold, L_NoComm, 
+        asExpectedState = [L_RcvData, L_RcvHold, L_Hold, L_NoComm, 
                 L_IDLE, L_SyncEscape];
     }
     else if (sNowState == L_RcvHold)
     {
-        return [L_RcvData, L_RcvHold, L_RcvEOF, L_IDLE,
+        asExpectedState = [L_RcvData, L_RcvHold, L_RcvEOF, L_IDLE,
                 L_NoComm, L_SyncEscape];
     }
     else if (sNowState == L_RcvEOF)
     {
-        return [L_RcvEOF, L_GoodCRC, L_BadEnd, L_NoComm];
+        asExpectedState = [L_RcvEOF, L_GoodCRC, L_BadEnd, L_NoComm];
     }
     else if (sNowState == L_GoodCRC)
     {
-        return [L_GoodEnd, L_BadEnd, L_GoodCRC, L_NoComm, L_IDLE];
+        asExpectedState = [L_GoodEnd, L_BadEnd, L_GoodCRC, L_NoComm, L_IDLE];
     }
     else if (sNowState == L_GoodEnd)
     {
-        return [L_IDLE, L_GoodEnd, L_NoComm];
+        asExpectedState = [L_IDLE, L_GoodEnd, L_NoComm];
     }
     else if (sNowState == L_BadEnd)
     {
-        return [L_IDLE, L_BadEnd, L_NoComm];
+        asExpectedState = [L_IDLE, L_BadEnd, L_NoComm];
     }
     else if (sNowState == L_TPMPartial)
     {
-        return [L_ChkPhyRdy, L_RcvWaitFifo, L_TPMPartial, 
+        asExpectedState = [L_ChkPhyRdy, L_RcvWaitFifo, L_TPMPartial, 
                 L_IDLE, L_NoComm, L_NoPmnak];
     }
     else if (sNowState == L_TPMSlumber)
     {
-        return [L_ChkPhyRdy, L_RcvWaitFifo, L_TPMSlumber,
+        asExpectedState = [L_ChkPhyRdy, L_RcvWaitFifo, L_TPMSlumber,
                 L_IDLE, L_NoComm, L_NoPmnak];
     }
     else if (sNowState == L_PMOff)
     {
-        return [L_ChkPhyRdy, L_PMOff];
+        asExpectedState = [L_ChkPhyRdy, L_PMOff];
     }
     else if (sNowState == L_PMDeny)
     {
-        return [L_PMDeny, L_IDLE, L_NoComm];
+        asExpectedState = [L_PMDeny, L_IDLE, L_NoComm];
     }
     else if (sNowState == L_ChkPhyRdy)
     {
-        return [L_ChkPhyRdy, L_NoComm];
+        asExpectedState = [L_ChkPhyRdy, L_NoComm];
     }
     else if (sNowState == L_NoComm)
     {
-        return [];
+        asExpectedState = [];
     }
     else if (sNowState == L_WakeUp2)
     {
-        return [L_IDLE, L_NoComm];
+        asExpectedState = [L_IDLE, L_NoComm];
     }
     else if (sNowState == L_NoPmnak)
     {
-        return [L_NoPmnak, L_IDLE];
+        asExpectedState = [L_NoPmnak, L_IDLE];
     }
     else
     {
-        return [S_NOT_FOUND];
+        asExpectedState = [S_NOT_FOUND];
     }
+    
+    return asExpectedState;
 }
 
 
-function isIllegalPrimitiveChange(sPrevPrimitive, sPrimitive, iDirection)
+function isIllegalPrimitiveChange(sPrimitive, sPrevPrimitive, sPrevNotAlign, iDirection)
 {
     if (sPrevPrimitive == XXXX || sPrevPrimitive == sPrimitive)
     {
@@ -1244,6 +1258,30 @@ function isIllegalPrimitiveChange(sPrevPrimitive, sPrimitive, iDirection)
                 if (asExpectedState[j] == asState[k])
                 {
                     return false;
+                }
+            }
+        }
+    }
+    
+    // allow the specific recover case : ex. SATA_X_RDY -> ALIGN -> SATA_X_RDY
+    if ((sPrevPrimitive == ALIGN) && sPrevNotAlign)
+    {
+        var asPrevState = getPrimitiveState(sPrevNotAlign, iDirection);
+    
+        for (var i = 0; i < asPrevState.length; i++)
+        {
+            var asExpectedState = getExpectedNextPrimitiveState(asPrevState[i], iDirection);
+            
+            //err(asPrevState[i] + " next Expectd:" + asExpectedState);
+            
+            for (var j = 0; j < asExpectedState.length; j++)
+            {
+                for (var k = 0; k < asState.length; k++)
+                {
+                    if (asExpectedState[j] == asState[k])
+                    {
+                        return false;
+                    }
                 }
             }
         }
@@ -1433,7 +1471,7 @@ function getNowTimeStr()
 
 function formatTextInCSV(sText)
 {
-    return sText.replace(/,/g, "/");
+    return sText.replace(/\s,\s/g, "，").replace(/,/g, "/");
 }
 
 function addErrorCSV(i, sType, sReason, sDescription)

@@ -296,8 +296,12 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
     var bStartParseMulti = false;
     var iFirstLineIdx = 0;
     var iLastLineIdx = 0;
-    
     var iFSMIdx = 0;
+    
+    var bSOF = false;
+    var bPayload = false;
+    var bCRC = false;
+    var bEOF = false;
 
     for (var j = iTextLineIdx + 2; j < iLength; j++)
     {     
@@ -348,6 +352,10 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                     " 個 MultiPrimitive , 但實際上有 " + (iLastLineIdx - iFirstLineIdx - 1) + " 行");
             }
             
+            if (bSOF || bPayload || bCRC)
+            {
+                setParseError(giPAIndex, "前面有 SATA_SOF 或 PAYLOAD 或 CRC , 但最後沒有 SATA_EOF");
+            }
             
             break; // the last line for this MultiPrimitive
         }
@@ -378,6 +386,13 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                         {
                             sPrimitive = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx];
                         }
+                        else if (giMultiPrimitiveIndex != 0)
+                        {
+                            var iPrevLastFSMIdx = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex - 1][IDX_MULTI_PRIMITIVE_QUEUE].length - 1;
+                            var sPrevLastPrimtivie = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex - 1][IDX_MULTI_PRIMITIVE_QUEUE][iPrevLastFSMIdx][iTagIdx];
+                            
+                            sPrimitive = sPrevLastPrimtivie;
+                        }
                     }
                     
                     // Rule 2: replace CRC value with "CRC"
@@ -388,7 +403,36 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
 
                     gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][iTagIdx] = sPrimitive;
                     
-                    //log(k + ":" + iTagIdx + ":" + sPrimitive);
+                    
+                    if (sPrimitive == SOF)
+                    {
+                        bSOF = true;
+                        bEOF = false;
+                        bPayload = false;
+                        bCRC = false;
+                    }
+                    else if (sPrimitive == PAYLOAD)
+                    {
+                        bPayload = true;
+                    }
+                    else if (sPrimitive == CRC)
+                    {
+                        bCRC = true;
+                    }
+                    else if (sPrimitive == EOF)
+                    {
+                        bEOF = true;
+                        
+                        if (!bPayload || !bCRC || !bSOF)
+                        {
+                            setParseError(giPAIndex, "第 " + iFSMIdx + 
+                                " 行是 SATA_EOF , 但前面缺少 SATA_SOF 或 PAYLOAD 或 CRC");
+                        }
+                        
+                        bPayload = false;
+                        bCRC = false;
+                        bSOF = false;
+                    }
                     
                     if (iTagIdx == IDX_DEVICE_PRIMITIVE)
                     {
