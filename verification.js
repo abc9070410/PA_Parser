@@ -700,6 +700,73 @@ function setDetectError(iPAIdx, sErrMsg, sDescription)
     addErrorCSV(iPAIdx, S_TYPE_DETECT, sErrMsg, sDescription);
 }
 
+
+function isIllegalPrimitiveChange(sPrimitive, sPrevPrimitive, sPrevNotAlign, iDirection)
+{
+    if (sPrevPrimitive == XXXX || sPrevPrimitive == sPrimitive)
+    {
+        return false; // skip checking 
+    }
+    
+    var asState = getPrimitiveState(sPrimitive, iDirection);
+    var asPrevState = getPrimitiveState(sPrevPrimitive, iDirection);
+    
+    for (var i = 0; i < asPrevState.length; i++)
+    {
+        var asExpectedState = getExpectedNextPrimitiveState(asPrevState[i], iDirection);
+        
+        //err(asPrevState[i] + " next Expectd:" + asExpectedState);
+        
+        for (var j = 0; j < asExpectedState.length; j++)
+        {
+            for (var k = 0; k < asState.length; k++)
+            {
+                if (asExpectedState[j] == asState[k])
+                {
+                    if (asExpectedState[j] == L_NoComm)
+                    {
+                        gsTempError = getDirectionText(iDirection) + ": 在 " + sPrevPrimitive + "(" + asPrevState + 
+                                      ") 的後面進入 L_NoComm (" + sPrimitive + ")";
+                        
+                        return true;
+                    }
+                    
+                    return false;
+                }
+            }
+        }
+    }
+    
+    // allow the specific recover case : ex. SATA_X_RDY -> ALIGN -> SATA_X_RDY
+    if ((sPrevPrimitive == ALIGN) && sPrevNotAlign && iDirection == I_HOST)
+    {
+        var asPrevState = getPrimitiveState(sPrevNotAlign, iDirection);
+    
+        for (var i = 0; i < asPrevState.length; i++)
+        {
+            var asExpectedState = getExpectedNextPrimitiveState(asPrevState[i], iDirection);
+            
+            //err(asPrevState[i] + " next Expectd:" + asExpectedState);
+            
+            for (var j = 0; j < asExpectedState.length; j++)
+            {
+                for (var k = 0; k < asState.length; k++)
+                {
+                    if (asExpectedState[j] == asState[k])
+                    {                        
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    
+    gsTempError = getDirectionText(iDirection) + ":" + sPrimitive + "(" + asState + 
+        ") 不能接在 " + sPrevPrimitive + "(" + asPrevState + ") 的後面";
+    
+    return true;
+}
+
 function detectPrimitiveFSM()
 {
     log("start detect PrimitiveFSM");

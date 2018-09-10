@@ -395,8 +395,9 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                         }
                     }
                     
-                    // Rule 2: replace CRC value with "CRC"
-                    if (iFSMIdx != 0 && gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx] == PAYLOAD)
+                    // Rule 2: replace CRC value with "CRC" (previous Primitive is "Payload")
+                    if ((sPrimitive && sPrimitive.length == 8 && sPrimitive.indexOf("_") < 0) && // ex. 23C60350
+                        (iFSMIdx != 0 && gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx] == PAYLOAD))
                     {
                         sPrimitive = CRC;
                     }
@@ -706,7 +707,14 @@ function buildCSV()
                 }
                 else if ((i+1) < giPAIndex)
                 {
-                    setDrawError(i+1, "Host 打 Partial 之後 , Device 並沒有接著回 ACK/NAK");
+                    if (isPartial(i+1) && (getDuration(i, i+1) < gbPartialResponseThreshold))
+                    {
+                        // allow Device responses ACK/NAK whthin gbPartialResponseThreshold (ns)
+                    }
+                    else
+                    {
+                        setDrawError(i+1, "Host 打 Partial 之後過了 " + gbPartialResponseThreshold + "ns , Device 並沒有接著回 ACK/NAK");
+                    }
                 }
                 bPartial = true;
                 bSlumber = false;
@@ -721,7 +729,14 @@ function buildCSV()
                 }
                 else if ((i+1) < giPAIndex)
                 {
-                    setDrawError(i+1, "Host 打 Slumber 之後 , Device 並沒有接著回 ACK/NAK");
+                    if (isSlumber(i+1) && (getDuration(i, i+1) < gbSlumberResponseThreshold))
+                    {
+                        // allow Device responses ACK/NAK whthin gbSlumberResponseThreshold (ns)
+                    }
+                    else
+                    {
+                        setDrawError(i+1, "Host 打 Slumber 之後過了 " + gbSlumberResponseThreshold + "ns , Device 並沒有接著回 ACK/NAK");
+                    }
                 }
                 bPartial = false;
                 bSlumber = true;

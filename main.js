@@ -163,7 +163,7 @@ function parseText()
 {
     parseSequence();
 
-    if (!gbParseError)
+    if (!gbParseError || gbSkipParseError)
     {
         checkVerification();
         detectFSM();

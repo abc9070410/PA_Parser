@@ -1112,7 +1112,7 @@ function getExpectedNextPrimitiveState(sNowState, iDirection)
     }
     else if (sNowState == L_SendAlign)
     {
-        asExpectedState = [L_NoComm, L_IDLE];
+        asExpectedState = [L_IDLE, L_NoComm];
     }
     else if (sNowState == HL_SendChkRdy)
     {
@@ -1124,25 +1124,25 @@ function getExpectedNextPrimitiveState(sNowState, iDirection)
     }
     else if (sNowState == L_SendSOF)
     {
-        asExpectedState = [L_SendData, L_NoComm, L_IDLE];
+        asExpectedState = [L_SendData, L_IDLE, L_NoComm];
     }
     else if (sNowState == L_SendData)
     {
         asExpectedState = [L_SendData, L_RcvHold, L_SendHold, L_SendCRC, 
-                L_IDLE, L_NoComm, L_SyncEscape];
+                L_IDLE, L_SyncEscape, L_NoComm];
     }
     else if (sNowState == L_SendHold)
     {
         asExpectedState = [L_SendData, L_RcvHold, L_SendHold, 
-                L_SendCRC, L_IDLE, L_NoComm, L_SyncEscape];
+                L_SendCRC, L_IDLE, L_SyncEscape, L_NoComm] ;
     }
     else if (sNowState == L_SendCRC)
     {
-        asExpectedState = [L_SendEOF, L_NoComm, L_IDLE];
+        asExpectedState = [L_SendEOF, L_IDLE, L_NoComm];
     }
     else if (sNowState == L_SendEOF)
     {
-        asExpectedState = [L_Wait, L_NoComm, L_IDLE];
+        asExpectedState = [L_Wait, L_IDLE, L_NoComm];
     }
     else if (sNowState == L_Wait)
     {
@@ -1164,17 +1164,17 @@ function getExpectedNextPrimitiveState(sNowState, iDirection)
     else if (sNowState == L_RcvData)
     {
         asExpectedState = [L_RcvData, L_Hold, L_RcvHold, L_RcvEOF, 
-                L_BadEnd, L_IDLE, L_RcvData, L_NoComm, L_SyncEscape];
+                L_BadEnd, L_IDLE, L_RcvData, L_SyncEscape, L_NoComm];
     }
     else if (sNowState == L_Hold)
     {
-        asExpectedState = [L_RcvData, L_RcvHold, L_Hold, L_NoComm, 
-                L_IDLE, L_SyncEscape];
+        asExpectedState = [L_RcvData, L_RcvHold, L_Hold, 
+                L_IDLE, L_SyncEscape, L_NoComm];
     }
     else if (sNowState == L_RcvHold)
     {
         asExpectedState = [L_RcvData, L_RcvHold, L_RcvEOF, L_IDLE,
-                L_NoComm, L_SyncEscape];
+                L_SyncEscape, L_NoComm];
     }
     else if (sNowState == L_RcvEOF)
     {
@@ -1182,7 +1182,7 @@ function getExpectedNextPrimitiveState(sNowState, iDirection)
     }
     else if (sNowState == L_GoodCRC)
     {
-        asExpectedState = [L_GoodEnd, L_BadEnd, L_GoodCRC, L_NoComm, L_IDLE];
+        asExpectedState = [L_GoodEnd, L_BadEnd, L_GoodCRC, L_IDLE, L_NoComm];
     }
     else if (sNowState == L_GoodEnd)
     {
@@ -1195,12 +1195,12 @@ function getExpectedNextPrimitiveState(sNowState, iDirection)
     else if (sNowState == L_TPMPartial)
     {
         asExpectedState = [L_ChkPhyRdy, L_RcvWaitFifo, L_TPMPartial, 
-                L_IDLE, L_NoComm, L_NoPmnak];
+                L_IDLE, L_NoPmnak, L_NoComm];
     }
     else if (sNowState == L_TPMSlumber)
     {
         asExpectedState = [L_ChkPhyRdy, L_RcvWaitFifo, L_TPMSlumber,
-                L_IDLE, L_NoComm, L_NoPmnak];
+                L_IDLE, L_NoPmnak, L_NoComm];
     }
     else if (sNowState == L_PMOff)
     {
@@ -1235,63 +1235,6 @@ function getExpectedNextPrimitiveState(sNowState, iDirection)
 }
 
 
-function isIllegalPrimitiveChange(sPrimitive, sPrevPrimitive, sPrevNotAlign, iDirection)
-{
-    if (sPrevPrimitive == XXXX || sPrevPrimitive == sPrimitive)
-    {
-        return false; // skip checking 
-    }
-    
-    var asState = getPrimitiveState(sPrimitive, iDirection);
-    var asPrevState = getPrimitiveState(sPrevPrimitive, iDirection);
-    
-    for (var i = 0; i < asPrevState.length; i++)
-    {
-        var asExpectedState = getExpectedNextPrimitiveState(asPrevState[i], iDirection);
-        
-        //err(asPrevState[i] + " next Expectd:" + asExpectedState);
-        
-        for (var j = 0; j < asExpectedState.length; j++)
-        {
-            for (var k = 0; k < asState.length; k++)
-            {
-                if (asExpectedState[j] == asState[k])
-                {
-                    return false;
-                }
-            }
-        }
-    }
-    
-    // allow the specific recover case : ex. SATA_X_RDY -> ALIGN -> SATA_X_RDY
-    if ((sPrevPrimitive == ALIGN) && sPrevNotAlign)
-    {
-        var asPrevState = getPrimitiveState(sPrevNotAlign, iDirection);
-    
-        for (var i = 0; i < asPrevState.length; i++)
-        {
-            var asExpectedState = getExpectedNextPrimitiveState(asPrevState[i], iDirection);
-            
-            //err(asPrevState[i] + " next Expectd:" + asExpectedState);
-            
-            for (var j = 0; j < asExpectedState.length; j++)
-            {
-                for (var k = 0; k < asState.length; k++)
-                {
-                    if (asExpectedState[j] == asState[k])
-                    {
-                        return false;
-                    }
-                }
-            }
-        }
-    }
-    
-    gsTempError = getDirectionText(iDirection) + ":" + sPrimitive + "(" + asState + 
-        ") 不能接在 " + sPrevPrimitive + "(" + asPrevState + ") 的後面";
-    
-    return true;
-}
 
 function isIllegalNextPrimitiveState(sNowState, sNextState, iDirection)
 {
