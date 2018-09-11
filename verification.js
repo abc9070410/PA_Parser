@@ -723,6 +723,7 @@ function isIllegalPrimitiveChange(sPrimitive, sPrevPrimitive, sPrevNotAlign, iDi
             {
                 if (asExpectedState[j] == asState[k])
                 {
+                    /*
                     if (asExpectedState[j] == L_NoComm)
                     {
                         gsTempError = getDirectionText(iDirection) + ": 在 " + sPrevPrimitive + "(" + asPrevState + 
@@ -730,6 +731,7 @@ function isIllegalPrimitiveChange(sPrimitive, sPrevPrimitive, sPrevNotAlign, iDi
                         
                         return true;
                     }
+                    */
                     
                     return false;
                 }
@@ -738,21 +740,21 @@ function isIllegalPrimitiveChange(sPrimitive, sPrevPrimitive, sPrevNotAlign, iDi
     }
     
     // allow the specific recover case : ex. SATA_X_RDY -> ALIGN -> SATA_X_RDY
-    if ((sPrevPrimitive == ALIGN) && sPrevNotAlign && iDirection == I_HOST)
+    if ((sPrevPrimitive == ALIGN) && sPrevNotAlign)// && iDirection == I_HOST)
     {
-        var asPrevState = getPrimitiveState(sPrevNotAlign, iDirection);
+        var asPrevState2 = getPrimitiveState(sPrevNotAlign, iDirection);
     
-        for (var i = 0; i < asPrevState.length; i++)
+        for (var i = 0; i < asPrevState2.length; i++)
         {
-            var asExpectedState = getExpectedNextPrimitiveState(asPrevState[i], iDirection);
+            var asExpectedState2 = getExpectedNextPrimitiveState(asPrevState2[i], iDirection);
             
-            //err(asPrevState[i] + " next Expectd:" + asExpectedState);
+            //err(asPrevState2[i] + " next Expectd:" + asExpectedState2);
             
-            for (var j = 0; j < asExpectedState.length; j++)
+            for (var j = 0; j < asExpectedState2.length; j++)
             {
                 for (var k = 0; k < asState.length; k++)
                 {
-                    if (asExpectedState[j] == asState[k])
+                    if (asExpectedState2[j] == asState[k])
                     {                        
                         return false;
                     }
@@ -771,6 +773,9 @@ function detectPrimitiveFSM()
 {
     log("start detect PrimitiveFSM");
     
+    var sPrevLastHostNonAlign = null;
+    var sPrevLastDeviceNonAlign = null;
+    
     for (var i = 0; i < giPAIndex; i++)
     {
         if (isMultiPrimitive(i))
@@ -782,7 +787,7 @@ function detectPrimitiveFSM()
             var sPrevHostNonAlign = null; // previous primitive whitch is not ALIGN
             var sPrevDeviceNonAlign = null; // previous primitive whitch is not ALIGN
             
-            err("No." + i + " MultiPrimitive");
+            log("No." + i + " MultiPrimitive");
             //err("--->" + aasFSM);
             //err("--->" + getNowPrimitiveFSM(i, I_DEVICE, 0));
 
@@ -803,6 +808,20 @@ function detectPrimitiveFSM()
                         setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生錯誤");
                     }
                 }
+                else
+                {
+                    // copy back the last Non align of the previous Primitive FSM
+                    if (sPrevLastHostNonAlign)
+                    {
+                        sPrevHostNonAlign = sPrevLastHostNonAlign;
+                        
+                        //err(sPrevHostNonAlign);
+                    }
+                    if (sPrevLastDeviceNonAlign)
+                    {
+                        sPrevDeviceNonAlign = sPrevLastDeviceNonAlign;
+                    }
+                }
                 
                 log(j + " H:" + sHostPrimitive + "->" + asHostState + " \t\tD:" + sDevicePrimitive + "->" + asDeviceState);
                 
@@ -818,6 +837,9 @@ function detectPrimitiveFSM()
                     sPrevDeviceNonAlign = sDevicePrimitive;
                 }
             }
+            
+            sPrevLastHostNonAlign = sPrevHostNonAlign;
+            sPrevLastDeviceNonAlign = sPrevDeviceNonAlign;
         }
     }
     

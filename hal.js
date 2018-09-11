@@ -1156,6 +1156,10 @@ function getExpectedNextPrimitiveState(sNowState, iDirection)
         {
             asExpectedState[asExpectedState.length] = L_GoodEnd;
         }
+        if (gbAllowR_RDYtoR_ERR)
+        {
+            asExpectedState[asExpectedState.length] = L_BadEnd;
+        }
     }
     else if (sNowState == L_RcvWaitFifo)
     {

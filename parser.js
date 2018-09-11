@@ -475,7 +475,7 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
 
     }
     
-    err(giPAIndex + ":" + giMultiPrimitiveIndex + "共有" + iFSMIdx + "行 Primitive")
+    log(giPAIndex + ":" + giMultiPrimitiveIndex + "共有" + iFSMIdx + "行 Primitive")
 
     giMultiPrimitiveIndex++;
     giPAIndex++;

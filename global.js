@@ -413,6 +413,7 @@ var gsVerifyCSV = "";
 var gbSkipParseError = true; // true : still do verify & detect even if there exists parse error
                              // false: do nothing if there exists parse error
 var gbAllowR_RDYtoR_OK = true; // true: allow R_RDY -> R_OK
+var gbAllowR_RDYtoR_ERR = true; // true: allow R_RDY -> R_ERR
 
 var gbPartialResponseThreshold = 300 // allow device responses PMACK/PMNAK delay for Partial (unit: ns)
 var gbSlumberResponseThreshold = 300 // allow device responses PMACK/PMNAK delay for Slumber (unit: ns)
