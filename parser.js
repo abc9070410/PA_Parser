@@ -384,7 +384,17 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                     {
                         if (iFSMIdx != 0)
                         {
-                            sPrimitive = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx];
+                            var sTemp = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx];
+
+                            if (sPrimitive != CONT || allowNextCONT(sTemp))
+                            {
+                                sPrimitive = sTemp;
+                            }
+                            else
+                            {
+                                setParseError(giPAIndex, "第 " + iFSMIdx + 
+                                    " 行是 " + sPrimitive + " , 但前一個 Primitive (" + sTemp + ") 並不是合法的 (可參考 9.4.7.1)");
+                            }
                         }
                         else if (giMultiPrimitiveIndex != 0)
                         {

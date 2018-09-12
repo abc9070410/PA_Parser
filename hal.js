@@ -1091,6 +1091,28 @@ function getDirectionText(iDirection)
     return (iDirection == I_HOST) ? "Host " : "Device ";
 }
 
+function allowNextCONT(sPrevPrimitive)
+{
+    var asAllow = [HOLD, HOLDA, PMREQ_P, PMREQ_S,
+                   R_ERR, R_IP, R_OK, R_RDY,
+                   SYNC, WTRM, X_RDY];
+                   
+    if (gbAllowALIGNtoCONT)
+    {
+        asAllow[asAllow.length] = ALIGN;
+    }
+                   
+    for (var i = 0; i < asAllow.length; i++)
+    {
+        if (asAllow[i] == sPrevPrimitive)
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 function getExpectedNextPrimitiveState(sNowState, iDirection)
 {
     var asExpectedState = [];
