@@ -101,6 +101,7 @@ var PMREQ_P = "SATA_PMREQ_P";
 var PMREQ_S = "SATA_PMREQ_S";
 var PMACK = "SATA_PMACK";
 var PMNAK = "SATA_PMNAK";
+var DMAT = "SATA_DMAT";
 
 var XXXX = "XXXX";
 var CRC = "CRC";

@@ -117,7 +117,7 @@ function parseFIS(asLineToken, iTextLineIdx)
             if (asTemp[0].indexOf(TAG_INFO[k][0]) == 0)
             {
                 var iAdditionIdx = IDX_FIS_AMOUNT + TAG_INFO[k][1];
-                gaasFISSeq[giFISIndex][iAdditionIdx] = asTemp[1];
+                gaasFISSeq[giFISIndex][iAdditionIdx] = asTemp[1].trim();
                 
                 log("match " + TAG_INFO[k][0] + " : " + iAdditionIdx + "," + gaasFISSeq[giFISIndex][iAdditionIdx]);
             }
@@ -386,15 +386,14 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                         {
                             var sTemp = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx];
 
-                            if (sPrimitive != CONT || allowNextCONT(sTemp))
-                            {
-                                sPrimitive = sTemp;
-                            }
-                            else
+                            if (sPrimitive == CONT && !allowNextCONT(sTemp))
                             {
                                 setParseError(giPAIndex, "第 " + iFSMIdx + 
                                     " 行是 " + sPrimitive + " , 但前一個 Primitive (" + sTemp + ") 並不是合法的 (可參考 9.4.7.1)");
                             }
+
+                            sPrimitive = sTemp;
+                            
                         }
                         else if (giMultiPrimitiveIndex != 0)
                         {

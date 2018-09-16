@@ -57,6 +57,11 @@ function formatPATime(str)
     return newStr;
 }
 
+function getProtocolError(i)
+{
+    return getNumber(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_ERROR], 10);
+}
+
 function getStartTime(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE)
@@ -220,6 +225,19 @@ function isDisableAutoActivate(i)
             getNumber(gaasFISSeq[j][IDX_FIS_SECTORS], 16) == 2);
 }
 
+
+function isCmdFIS(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)
+    {
+        return false;
+    }
+    
+    var j = gaasPASeq[i][IDX_PA_NO];
+
+    return (gaasFISSeq[j][IDX_FIS_COMMAND] && gaasFISSeq[j][IDX_FIS_COMMAND].length >= 2);
+}
+
 function isDMACmd(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)
@@ -229,6 +247,7 @@ function isDMACmd(i)
 
     return getCmdInfo(i).indexOf("DMA") >= 0;
 }
+
 
 function isNonDataCmd(i)
 {
@@ -294,7 +313,7 @@ function getNCQTag(i)
 
 function isFIS(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS;
+    return isLegalPAIdx(i) && gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS;
 }
 
 function isDataFIS(i)
@@ -305,26 +324,30 @@ function isDataFIS(i)
 
 function isHostFIS(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+    return isLegalPAIdx(i) &&
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_PORT].indexOf("I1") == 0;
 }
 
 function isDeviceFIS(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+    return isLegalPAIdx(i) &&
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_PORT].indexOf("T1") == 0;
 }
 
 function isSDBFIS(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+    return isLegalPAIdx(i) &&
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("A1") == 0;
 }
 
 // device would ignore the illegal cmd fis which C bit is 0
 function isCBit0(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+    return isLegalPAIdx(i) &&
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_CBIT] == "0";
 }
 
@@ -554,7 +577,7 @@ function isNOP(i)
 
 function isPIORead(i)
 {
-    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS || !isLegalPAIdx(i))
     {
         return false;
     }
@@ -574,32 +597,37 @@ function isPIORead(i)
 
 function isPIOSetupFIS(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+    return isLegalPAIdx(i) &&
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("5F") == 0;
 }
 
 function isDMAActivateFIS(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+    return isLegalPAIdx(i) &&
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("39") == 0;
 }
 
 function isDMASetupFIS(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+    return isLegalPAIdx(i) &&
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("41") == 0;
 }
 
 
 function isD2HFIS(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+    return isLegalPAIdx(i) &&
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("34") == 0;
 }
 
 function isH2DFIS(i)
 {
-    return gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
+    return isLegalPAIdx(i) && 
+           gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS &&
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_TYPE].indexOf("27") == 0;
 }
 
@@ -730,11 +758,11 @@ function getDataFISLength(i)
     
     var j = gaasPASeq[i][IDX_PA_NO];
 
-    return gaasFISSeq[j][IDX_FIS_DATA].length;
+    return (gaasFISSeq[j][IDX_FIS_DATA].length / 2);
 }
 
-// get sectorCnt from CMD FIS
-function getSectorCnt(i)
+// return Integer
+function getFISIntegerValue(iFieldIdx, i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
     {
@@ -744,13 +772,36 @@ function getSectorCnt(i)
     
     var j = gaasPASeq[i][IDX_PA_NO];
     
-    if (parseInt(gaasFISSeq[j][IDX_FIS_SECTORS], 16) == 0)
+    if (parseInt(gaasFISSeq[j][iFieldIdx], 16) == 0)
     {
         return 0;
     }
     
-    return getNumber(gaasFISSeq[j][IDX_FIS_SECTORS], 16);
+    return getNumber(gaasFISSeq[j][iFieldIdx], 16);
 }
+
+// get sectorCnt from CMD FIS (return Integer)
+function getSectorCnt(i)
+{
+    return getFISIntegerValue(IDX_FIS_SECTORS, i);
+}
+
+// return Integer
+function getLBA(i)
+{
+    return getFISIntegerValue(IDX_FIS_LBA, i);
+}
+
+function getStatus(i)
+{
+    return getFISIntegerValue(IDX_FIS_STATUS, i);
+}
+
+function getError(i)
+{
+    return getFISIntegerValue(IDX_FIS_ERROR, i);
+}
+
 
 function getFeature(i)
 {
@@ -1108,6 +1159,55 @@ function allowNextCONT(sPrevPrimitive)
         {
             return true;
         }
+    }
+    
+    return false;
+}
+
+function isSyncEscape(sPrevPrimitive, sNowPrimitive, iDirection)
+{
+    if (sNowPrimitive != SYNC || sPrevPrimitive == SYNC)
+    {
+        // not parse for the following cases: 
+        //  case 1: * -> not SYNC
+        //  case 2: SYNC -> *
+        return false;
+    }
+    
+    var asPrevState = getPrimitiveState(sPrevPrimitive);
+    
+    for (var i = 0; i < asPrevState.length; i++)
+    {
+        var asExpectNextState = getExpectedNextPrimitiveState(asPrevState[i], iDirection);
+        
+        for (var j = 0; j < asExpectNextState.length; j++)
+        {
+            if (asExpectNextState[j] == L_SyncEscape)
+            {
+                gsTempError = "在" + sPrevPrimitive + "之後有 SYNC";
+                
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+function isBadEnd(sPrevPrimitive, sNowPrimitive)
+{
+    if (sPrevPrimitive == R_ERR)
+    {
+        // not parse for the following cases: 
+        //  case 1: R_ERR -> *
+        return false;
+    }
+    
+    if (sNowPrimitive == R_ERR)
+    {
+        gsTempError = "在" + sPrevPrimitive + "之後有 R_ERR";
+        
+        return true;
     }
     
     return false;

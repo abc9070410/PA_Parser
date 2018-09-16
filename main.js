@@ -166,7 +166,7 @@ function parseText()
     if (!gbParseError || gbSkipParseError)
     {
         checkVerification();
-        detectFSM();
+        detectRule();
         doStatistics();
     }
     
@@ -190,10 +190,15 @@ function checkVerification()
     checkDataFIS();
 }
 
+function detectRule()
+{
+    detectFIS();
+    detectFSM();
+}
+
 function detectFSM()
 {
     detectPrimitiveFSM();
-    
 }
 
 function doStatistics()

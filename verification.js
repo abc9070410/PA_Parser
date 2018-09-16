@@ -613,43 +613,62 @@ function checkDataFIS()
     
     var ubCorrectLengthCnt = [];
     var iDataFISCnt = 0;
+    var isDMA = false;
+    var isPIO = false;
     
     for (var i = 0; i < giPAIndex; i++)
     {
-        if (isFIS(i) && !isNonDataCmd(i))
+        if (isFIS(i))
         {
-            iDataFISCnt++;
-            
-            var iDataLength = getDataFISLength(i);
-            
-            log(getClaim(i) + ":" + iDataLength);
-            
-            if (isDMACmd(i)) // DMA read/write cmd
+            if (isCmdFIS(i))
             {
-                if ((iDataLength % 8192) != 0)
+                if (isNonDataCmd(i))
                 {
-                    if (ubCorrectLengthCnt[I_DMA_DATA_FIS]) // exist correct DATA FIS before
+                    isDMA = false;
+                    isPIO = false;
+                }
+                else if (isDMACmd(i))
+                {
+                    isDMA = true;
+                    isPIO = false;
+                    
+                    log(getClaim(i) + " DMA");
+                }
+                else
+                {
+                    isDMA = false;
+                    isPIO = true;
+                }
+            }
+            else if (isDataFIS(i))
+            {
+                iDataFISCnt++;
+                
+                var iDataLength = getDataFISLength(i);
+                
+                log(getClaim(i) + ":" + iDataLength);
+                
+                if (isDMA) // DMA read/write cmd
+                {
+                    if ((iDataLength % 8192) != 0)
                     {
                         setFailInfo(i, "Data FIS 資料長度並沒有 aligned 8KB");
                     }
+                    else
+                    {
+                        ubCorrectLengthCnt[I_DMA_DATA_FIS]++;
+                    }
                 }
-                else
+                else if (isPIO) // PIO read/write cmd
                 {
-                    ubCorrectLengthCnt[I_DMA_DATA_FIS]++;
-                }
-            }
-            else // PIO read/write cmd
-            {
-                if ((iDataLength % 512) != 0)
-                {
-                    if (ubCorrectLengthCnt[I_PIO_DATA_FIS]) // exist correct DATA FIS before
+                    if ((iDataLength % 512) != 0)
                     {
                         setFailInfo(i, "Data FIS 資料長度並沒有 aligned 512Bytes");
                     }
-                }
-                else
-                {
-                    ubCorrectLengthCnt[I_PIO_DATA_FIS]++;
+                    else
+                    {
+                        ubCorrectLengthCnt[I_PIO_DATA_FIS]++;
+                    }
                 }
             }
         }
@@ -673,6 +692,113 @@ function checkDataFIS()
     {
         updatePassResult("Data FIS 資料長度都符合預期");
     }
+}
+
+function detectFIS()
+{
+    log("start check DataFIS");
+    
+    initFailInfo();
+    
+    var isDMA = false;
+    var isPIO = false;
+    var iDataByte = 0;
+    var iExpectDataByte = 0;
+    
+    for (var i = 0; i < giPAIndex; i++)
+    {
+        if (isHostOOB(i))
+        {
+            // check D2H for COMRESET
+            if (isComreset(i) && isDeviceFIS(i+1))
+            {
+                if (isD2HFIS(i+1))
+                {
+                    if (getLBA(i+1) != 1 || getSectorCnt(i+1) != 1 || getError(i+1) != 1 || getStatus(i+1) != 0x50)
+                    {
+                        setDetectError(i, "回應 COMRESET 的 D2H FIS 內容錯誤", "");
+                    }
+                }   
+                else
+                {
+                    setDetectError(i, "並不是回應 COMRESET 的 D2H FIS", "");
+                }
+            }
+        }
+        else if (isFIS(i))
+        {
+            if (isCmdFIS(i))
+            {
+                if (isNonDataCmd(i))
+                {
+                    isDMA = false;
+                    isPIO = false;
+                }
+                else if (isDMACmd(i))
+                {
+                    isDMA = true;
+                    isPIO = false;
+                    iDataByte = 0;
+                    iExpectDataByte = getSectorCnt(i) * 512;
+                }
+                else
+                {
+                    isDMA = false;
+                    isPIO = true;
+                    iDataByte = 0;
+                    iExpectDataByte = getSectorCnt(i) * 512;
+                }
+                
+                if (isNCQ(i) && isFIS(i+1))
+                {
+                    if (!isD2HFIS(i+1))
+                    {
+                        setDetectError(i, "NCQ cmd 之後沒有馬上回應 D2H FIS", "");
+                    }
+                }
+            }
+            else if (isDataFIS(i))
+            {
+                var iDataLength = getDataFISLength(i);
+                
+                iDataByte += iDataLength;
+                
+                log(getClaim(i) + ":" + iDataLength);
+                
+                // check SDB/D2H after undone Data FIS on read cmd (undone reason could be DMAT or SYNC from Host)
+                if ((iDataByte != iExpectDataByte) &&
+                    ((isDMA && iDataLength != 8192) || (isPIO && iDataLength != 512)))
+                {   
+                    log("Expect:" + iExpectDataByte + ", Actual:" + iDataByte);
+                    if (isD2HFIS(i+1))
+                    {
+                        if ((getStatus(i+1) & 1) != 1 ||
+                            (getError(i+1) & 4) != 4)
+                        {
+                            setDetectError(i, "資料長度錯誤的 Data FIS (" + iDataLength + "bytes) 之後的 D2H FIS 內容錯誤", 
+                                "Status:" + getStatus(i+1) + " , Error:" + getError(i+1));
+                        }
+                    }
+                    else if (isSDBFIS(i+1))
+                    {
+                        if (getSActiveHex(i+1) != "00000000" ||
+                            (getError(i+1) & 4) != 4)
+                        {      
+                            setDetectError(i, "不完整的 Data FIS 之後的 SDB FIS 內容錯誤", 
+                                "SACTIVE:" + getSActiveHex(i+1) + " , Error:" + getError(i+1));
+                        }
+                    }
+                    else
+                    {
+                        setDetectError(i, "不完整的 Data FIS 之後沒有 D2H/SDB FIS", "Data FIS 長度只有" + iDataLength);
+                    }
+                }
+            }
+        }
+        
+    }
+    
+    log("detect FIS Done");
 }
 
 function formatPrimitiveFSM()
@@ -802,6 +928,25 @@ function detectPrimitiveFSM()
                 
                 if (j > 0)
                 {
+                    if (isSyncEscape(sPrevHostPrimitive, sHostPrimitive))
+                    {
+                        setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生 SyncEscape");
+                    }
+                    if (isSyncEscape(sPrevDevicePrimitive, sDevicePrimitive))
+                    {
+                        setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生 SyncEscape");
+                    }
+                    
+                    if (isBadEnd(sPrevHostPrimitive, sHostPrimitive))
+                    {
+                        setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生 BadEnd");
+                    }
+                    if (isBadEnd(sPrevDevicePrimitive, sDevicePrimitive))
+                    {
+                        setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生 BadEnd");
+                    }
+                    
+                    
                     if (isIllegalPrimitiveChange(sHostPrimitive, sPrevHostPrimitive, sPrevHostNonAlign, I_HOST) ||
                         isIllegalPrimitiveChange(sDevicePrimitive, sPrevDevicePrimitive, sPrevDeviceNonAlign, I_DEVICE))
                     {
