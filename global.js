@@ -91,7 +91,6 @@ var CONT = "SATA_CONT";
 var R_IP = "SATA_R_IP";
 var R_OK = "SATA_R_OK";
 var R_ERR = "SATA_R_ERR";
-var XXXX = "XXXX";
 var SOF = "SATA_SOF";
 var EOF = "SATA_EOF";
 var PAYLOAD = "Payload";
@@ -274,8 +273,6 @@ var IDX_MULTI_PRIMITIVE_SEC_COUNT = 2;
 var IDX_MULTI_PRIMITIVE_AMOUNT = 2;
 
 var IDX_MULTI_PRIMITIVE_QUEUE = IDX_INFO_AMOUNT + IDX_MULTI_PRIMITIVE_AMOUNT;
-var IDX_HOST_PRIMITIVE = 0;
-var IDX_DEVICE_PRIMITIVE = 1;
 
 var TAG_MULTI_PRIMITIVE = [
     ["FIS Type", IDX_MULTI_PRIMITIVE_FIS_TYPE],
@@ -419,3 +416,5 @@ var gbAllowALIGNtoCONT = true; // true: allow ALIGN -> CONT
 
 var gbPartialResponseThreshold = 300 // allow device responses PMACK/PMNAK delay for Partial (unit: ns)
 var gbSlumberResponseThreshold = 300 // allow device responses PMACK/PMNAK delay for Slumber (unit: ns)
+
+

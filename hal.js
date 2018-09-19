@@ -1008,7 +1008,85 @@ function isMultiPrimitive(i)
     return isLegalPAIdx(i) && (gaasPASeq[i][IDX_PA_TYPE] == TYPE_MULTI_PRIMITIVE);
 }
 
+function isValidPrimitive(sPrimitive)
+{
+    var asValid = [X_RDY, R_RDY, ALIGN, SYNC, WTRM, CONT, 
+                   R_IP, R_OK, R_ERR, SOF, EOF, PAYLOAD, 
+                   HOLDA, HOLD, PMREQ_P, PMREQ_S, PMACK, PMNAK, DMAT];
+                   
+    for (var i = 0; i < asValid.length; i++)
+    {
+        if (sPrimitive && sPrimitive.indexOf(asValid[i]) == 0)
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+function printFSM(aasFSM, iMaxFSMIdx)
+{
+    var sUART = "";
+    
+    for (var i = 0; i < aasFSM.length && i < iMaxFSMIdx; i++)
+    {
+        sUART += "[" + i + ":" + aasFSM[i][I_HOST] + "," + aasFSM[i][I_DEVICE] + "]";
+    }
+    
+    err(sUART);
+}
+
+function getFirstValidPrimitive(iPAIdx, iDirection)
+{
+    var aasFSM = getPrimitiveFSM(iPAIdx);
+    
+    if (aasFSM)
+    {
+        for (var i = 0; i < aasFSM.length; i++)
+        {
+            if (isValidPrimitive(aasFSM[i][iDirection]))
+            {
+                return aasFSM[i][iDirection];
+            }
+        }
+    }
+    
+    return null;
+}
+
+function getLastValidPrimitive(iPAIdx, iDirection)
+{
+    var aasFSM = getPrimitiveFSM(iPAIdx);
+    
+    if (aasFSM)
+    {
+        for (var i = aasFSM.length - 1; i >= 0; i--)
+        {
+            if (isValidPrimitive(aasFSM[i][iDirection]))
+            {
+                return aasFSM[i][iDirection];
+            }
+        }
+    }
+    
+    return null;
+}
+
+
 function getPrimitiveFSM(i)
+{
+    if (!isMultiPrimitive(i))
+    {
+        return null;
+    }
+    
+    var j = gaasPASeq[i][IDX_PA_NO];
+
+    return gaasMultiPrimitiveSeq[j][IDX_MULTI_PRIMITIVE_QUEUE];
+}
+
+function setPrimitiveFSM(i, aasFSM)
 {
     if (!isMultiPrimitive(i))
     {
@@ -1017,17 +1095,17 @@ function getPrimitiveFSM(i)
     
     var j = gaasPASeq[i][IDX_PA_NO];
 
-    return gaasMultiPrimitiveSeq[j][IDX_MULTI_PRIMITIVE_QUEUE];
+    gaasMultiPrimitiveSeq[j][IDX_MULTI_PRIMITIVE_QUEUE] = aasFSM;
 }
 
 function getHostPrimitive(aasFSM, iFSMIdx)
 {
-    return aasFSM[iFSMIdx][IDX_HOST_PRIMITIVE];
+    return aasFSM[iFSMIdx][I_HOST];
 }
 
 function getDevicePrimitive(aasFSM, iFSMIdx)
 {
-    return aasFSM[iFSMIdx][IDX_DEVICE_PRIMITIVE];
+    return aasFSM[iFSMIdx][I_DEVICE];
 }
 
 function getNowPrimitiveFSM(i, iDirection, iFSMIdx)
@@ -1039,7 +1117,7 @@ function getNowPrimitiveFSM(i, iDirection, iFSMIdx)
         return S_NOT_FOUND;
     }
     
-    var iDirectionIdx = (iDirection == I_HOST) ? IDX_HOST_PRIMITIVE : IDX_DEVICE_PRIMITIVE;
+    var iDirectionIdx = (iDirection == I_HOST) ? I_HOST : I_DEVICE;
     
     err("###" + aasFSM[iFSMIdx]);
     

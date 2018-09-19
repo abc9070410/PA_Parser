@@ -895,6 +895,121 @@ function isIllegalPrimitiveChange(sPrimitive, sPrevPrimitive, sPrevNotAlign, iDi
     return true;
 }
 
+
+function formatNowPrimitive(asPrev, asNow, iPAIdx, iFSMIdx)
+{
+    var asNewNow = asNow;
+    
+    for (var i = 0; i < 2; i++)
+    {
+        var iOhter = (i == I_HOST) ? I_DEVICE : I_HOST;
+        
+        // set primitive to R_IP if Other Primitive is PAYLOAD
+        if (asNow[i] == PAYLOAD && !asNewNow[iOhter])
+        {
+            asNewNow[iOhter] = R_IP;
+        }
+        else if (asPrev[i] &&
+                 (!asNow[i] || asNow[i] == CONT || asNow[i].indexOf(XXXX) == 0))
+        {
+            if (!allowNextCONT(asPrev[i]))
+            {
+                setFormatError(iPAIdx, "第 " + iFSMIdx + 
+                    " 行是 " + asNow[i] + " , 但前一個 Primitive (" + asPrev[i] + ") 並不是合法的 (可參考 9.4.7.1)");
+            }
+            
+            asNewNow[i] = asPrev[i];
+        }
+    }
+    
+    return asNewNow;
+}    
+
+function formatPrevPrimitive(asPrev, asNow, iPAIdx, iFSMIdx)
+{
+    var asNewPrev = asPrev;
+    
+    for (var i = 0; i < 2; i++)
+    {
+        var iOhter = (i == I_HOST) ? I_DEVICE : I_HOST;
+        
+        // set primitive to HOLD if Other Primitive is PAYLOAD->HOLDA 
+        if (asPrev[i] == PAYLOAD && asNow[i] == HOLDA)
+        {
+            asNewPrev[iOhter] = HOLD;
+        }
+        // set primitive to HOLDA if Other Primitive is PAYLOAD->HOLD 
+        else if (asPrev[i] == PAYLOAD && asNow[i] == HOLD)
+        {
+            asNewPrev[iOhter] = HOLDA;
+        }
+    }
+    
+    return asNewPrev;
+}    
+
+function formatPrimitiveFSM()
+{
+    log("start format PrimitiveFSM");
+    
+    var sPrevLastValidHost = null;
+    var sPrevLastValidDevice = null;
+    
+    for (var i = 0; i < giPAIndex; i++)
+    {
+        if (isMultiPrimitive(i))
+        {
+            var aasFSM = getPrimitiveFSM(i);
+            
+            log("No." + i + " MultiPrimitive");
+
+            // valid the first Host Primitive 
+            if (!isValidPrimitive(aasFSM[0][I_HOST]))
+            {
+                if (sPrevLastValidHost)
+                {
+                    aasFSM[0][I_HOST] = sPrevLastValidHost;
+                }
+                else
+                {
+                    aasFSM[0][I_HOST] = getFirstValidPrimitive(i, I_HOST);
+                }
+            }
+            // valid the first Device Primitive 
+            if (!isValidPrimitive(aasFSM[0][I_DEVICE]))
+            {
+                if (sPrevLastValidDevice)
+                {
+                    aasFSM[0][I_DEVICE] = sPrevLastValidDevice;
+                }
+                else
+                {
+                    aasFSM[0][I_DEVICE] = getFirstValidPrimitive(i, I_DEVICE);
+                }
+            }
+
+            for (var j = 0; j < aasFSM.length; j++)
+            {
+                var asPrevPrimitive = [];
+                
+                if (j > 0)
+                {
+                    aasFSM[j-1] = formatPrevPrimitive(aasFSM[j-1], aasFSM[j], i, j);
+                    
+                    asPrevPrimitive = aasFSM[j-1];
+                }
+                
+                aasFSM[j] = formatNowPrimitive(asPrevPrimitive, aasFSM[j], i, j);
+            }
+            
+            sPrevLastValidHost = getLastValidPrimitive(i, I_HOST);
+            sPrevLastValidDevice = getLastValidPrimitive(i, I_DEVICE);
+        }
+    }
+    
+    log("format detectPrimitiveFSM done");
+}
+
 function detectPrimitiveFSM()
 {
     log("start detect PrimitiveFSM");
@@ -912,6 +1027,9 @@ function detectPrimitiveFSM()
             
             var sPrevHostNonAlign = null; // previous primitive whitch is not ALIGN
             var sPrevDeviceNonAlign = null; // previous primitive whitch is not ALIGN
+            
+            var iHostContinueAlignCount = 0;
+            var iDeviceContinueAlignCount = 0;
             
             log("No." + i + " MultiPrimitive");
             //err("--->" + aasFSM);
@@ -944,6 +1062,34 @@ function detectPrimitiveFSM()
                     if (isBadEnd(sPrevDevicePrimitive, sDevicePrimitive))
                     {
                         setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生 BadEnd");
+                    }
+                    
+                    if (sHostPrimitive == ALIGN)
+                    {
+                        iHostContinueAlignCount++;
+                    }
+                    else
+                    {
+                        if (iHostContinueAlignCount > 2)
+                        {
+                            setDetectError(i, "前面是 " + sPrevHostNonAlign, "第 " + j + " 行 Host Primitive 連續有 " + iHostContinueAlignCount + " 個 ALIGN");
+                        }
+                        
+                        iHostContinueAlignCount = 0;
+                    }
+                    
+                    if (sDevicePrimitive == ALIGN)
+                    {
+                        iDeviceContinueAlignCount++;
+                    }
+                    else
+                    {
+                        if (iDeviceContinueAlignCount > 2)
+                        {
+                            setDetectError(i, "前面是 " + sPrevDeviceNonAlign, "第 " + j + " 行 Device Primitive 連續有 " + iDeviceContinueAlignCount + " 個 ALIGN");
+                        }
+                        
+                        iDeviceContinueAlignCount = 0;
                     }
                     
                     

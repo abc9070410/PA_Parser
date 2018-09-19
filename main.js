@@ -198,6 +198,7 @@ function detectRule()
 
 function detectFSM()
 {
+    formatPrimitiveFSM();
     detectPrimitiveFSM();
 }
 

@@ -373,29 +373,18 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                 // log(k + "[" + asTemp2[k] + "]");
                 if (asTemp2[k])
                 {
-                    iTagIdx = (k == 0) ? IDX_HOST_PRIMITIVE : IDX_DEVICE_PRIMITIVE;
+                    iTagIdx = (k == 0) ? I_HOST : I_DEVICE;
                     
                     var sPrimitive = asTemp2[k].replace("<<", "").replace(">>", "").trim();
                     
                     // # format rule
                     //                     
+                    
+                    /*
                     // Rule 1: replace SATA_CONT or XXXX or "" with the previous Primitive
                     if (sPrimitive == CONT || sPrimitive.indexOf(XXXX) == 0 || sPrimitive == "")
                     {
-                        if (iFSMIdx != 0)
-                        {
-                            var sTemp = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx];
-
-                            if (sPrimitive == CONT && !allowNextCONT(sTemp))
-                            {
-                                setParseError(giPAIndex, "第 " + iFSMIdx + 
-                                    " 行是 " + sPrimitive + " , 但前一個 Primitive (" + sTemp + ") 並不是合法的 (可參考 9.4.7.1)");
-                            }
-
-                            sPrimitive = sTemp;
-                            
-                        }
-                        else if (giMultiPrimitiveIndex != 0)
+                        if (iFSMIdx == 0 && giMultiPrimitiveIndex != 0)
                         {
                             var iPrevLastFSMIdx = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex - 1][IDX_MULTI_PRIMITIVE_QUEUE].length - 1;
                             var sPrevLastPrimtivie = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex - 1][IDX_MULTI_PRIMITIVE_QUEUE][iPrevLastFSMIdx][iTagIdx];
@@ -403,7 +392,7 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                             sPrimitive = sPrevLastPrimtivie;
                         }
                     }
-                    
+                    */
                     // Rule 2: replace CRC value with "CRC" (previous Primitive is "Payload")
                     if ((sPrimitive && sPrimitive.length == 8 && sPrimitive.indexOf("_") < 0) && // ex. 23C60350
                         (iFSMIdx != 0 && gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][iTagIdx] == PAYLOAD))
@@ -444,23 +433,8 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
                         bSOF = false;
                     }
                     
-                    if (iTagIdx == IDX_DEVICE_PRIMITIVE)
+                    if (iTagIdx == I_DEVICE)
                     {
-                        // get Device but no Host case : Host is "" -> duplicate previous Host Primitive
-                        if (!gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_HOST_PRIMITIVE])
-                        {
-                            if (iFSMIdx != 0)
-                            {
-                                sPrimitive = gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx - 1][IDX_HOST_PRIMITIVE];
-                            }
-                            else
-                            {
-                                sPrimitive = XXXX;
-                            }
-                            
-                            gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_HOST_PRIMITIVE] = sPrimitive;
-                        }
-                        
                         break; // parse done
                     }
                 }
@@ -469,13 +443,13 @@ function parseMultiPrimitive(asLineToken, iTextLineIdx)
             if (iTagIdx != 0)
             {
                 log(giPAIndex + ":" + giMultiPrimitiveIndex + ":" + iFSMIdx);
-                log(" H:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_HOST_PRIMITIVE] +
-                    " D:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_DEVICE_PRIMITIVE]);
+                log(" H:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][I_HOST] +
+                    " D:" + gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][I_DEVICE]);
             
-                if (!gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_HOST_PRIMITIVE] ||
-                    !gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][IDX_DEVICE_PRIMITIVE])
+                if (!gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][I_HOST] ||
+                    !gaasMultiPrimitiveSeq[giMultiPrimitiveIndex][IDX_MULTI_PRIMITIVE_QUEUE][iFSMIdx][I_DEVICE])
                 {
-                    setParseError(giPAIndex, " 的第 " + iFSMIdx  + " 行沒有解析到 Host/Device Primitive");
+                    //setParseError(giPAIndex, " 的第 " + iFSMIdx  + " 行沒有解析到 Host/Device Primitive");
                 }
             
                 iFSMIdx++;
@@ -515,6 +489,14 @@ function setParseError(iPAIdx, sErrMsg)
 {
     err(sErrMsg);
     gbParseError = true;
+    
+    addErrorCSV(iPAIdx, S_TYPE_PARSE, sErrMsg, "");
+}
+
+function setFormatError(iPAIdx, sErrMsg)
+{
+    //err(sErrMsg);
+    //gbParseError = true;
     
     addErrorCSV(iPAIdx, S_TYPE_PARSE, sErrMsg, "");
 }
