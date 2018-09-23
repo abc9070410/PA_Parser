@@ -1010,7 +1010,7 @@ function isMultiPrimitive(i)
 
 function isValidPrimitive(sPrimitive)
 {
-    var asValid = [X_RDY, R_RDY, ALIGN, SYNC, WTRM, CONT, 
+    var asValid = [X_RDY, R_RDY, ALIGN, SYNC, WTRM, /*CONT,*/ 
                    R_IP, R_OK, R_ERR, SOF, EOF, PAYLOAD, 
                    HOLDA, HOLD, PMREQ_P, PMREQ_S, PMACK, PMNAK, DMAT];
                    

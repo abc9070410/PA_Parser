@@ -896,7 +896,7 @@ function isIllegalPrimitiveChange(sPrimitive, sPrevPrimitive, sPrevNotAlign, iDi
 }
 
 
-function formatNowPrimitive(asPrev, asNow, iPAIdx, iFSMIdx)
+function formatNowPrimitive(asPrev, asPrevValid, asNow, iPAIdx, iFSMIdx)
 {
     var asNewNow = asNow;
     
@@ -912,10 +912,15 @@ function formatNowPrimitive(asPrev, asNow, iPAIdx, iFSMIdx)
         else if (asPrev[i] &&
                  (!asNow[i] || asNow[i] == CONT || asNow[i].indexOf(XXXX) == 0))
         {
-            if (!allowNextCONT(asPrev[i]))
+            if (asNow[i] == CONT && !allowNextCONT(asPrev[i]))
             {
                 setFormatError(iPAIdx, "第 " + iFSMIdx + 
                     " 行是 " + asNow[i] + " , 但前一個 Primitive (" + asPrev[i] + ") 並不是合法的 (可參考 9.4.7.1)");
+            }
+            
+            if (asPrevValid[i] != asPrev[i])
+            {
+                err(getClaim(i) + "_" + iFSMIdx + ":" + asPrev[i] + " != " + asPrevValid[i]);
             }
             
             asNewNow[i] = asPrev[i];
@@ -987,6 +992,8 @@ function formatPrimitiveFSM()
                     aasFSM[0][I_DEVICE] = getFirstValidPrimitive(i, I_DEVICE);
                 }
             }
+            
+            var asPrevValid = [];
 
             for (var j = 0; j < aasFSM.length; j++)
             {
@@ -999,7 +1006,16 @@ function formatPrimitiveFSM()
                     asPrevPrimitive = aasFSM[j-1];
                 }
                 
-                aasFSM[j] = formatNowPrimitive(asPrevPrimitive, aasFSM[j], i, j);
+                aasFSM[j] = formatNowPrimitive(asPrevPrimitive, asPrevValid, aasFSM[j], i, j);
+                
+                if (isValidPrimitive(aasFSM[j][I_HOST]))
+                {
+                    asPrevValid[I_HOST] = aasFSM[j][I_HOST];
+                }
+                if (isValidPrimitive(aasFSM[j][I_DEVICE]))
+                {
+                    asPrevValid[I_DEVICE] = aasFSM[j][I_DEVICE];
+                }
             }
             
             sPrevLastValidHost = getLastValidPrimitive(i, I_HOST);
@@ -1070,9 +1086,9 @@ function detectPrimitiveFSM()
                     }
                     else
                     {
-                        if (iHostContinueAlignCount > 2)
+                        if (iHostContinueAlignCount > 3)
                         {
-                            setDetectError(i, "前面是 " + sPrevHostNonAlign, "第 " + j + " 行 Host Primitive 連續有 " + iHostContinueAlignCount + " 個 ALIGN");
+                            setDetectError(i, "第 " + j + " 行 Host Primitive 連續有 " + iHostContinueAlignCount + " 個 ALIGN", "前面是 " + sPrevHostNonAlign);
                         }
                         
                         iHostContinueAlignCount = 0;
@@ -1086,15 +1102,14 @@ function detectPrimitiveFSM()
                     {
                         if (iDeviceContinueAlignCount > 2)
                         {
-                            setDetectError(i, "前面是 " + sPrevDeviceNonAlign, "第 " + j + " 行 Device Primitive 連續有 " + iDeviceContinueAlignCount + " 個 ALIGN");
+                            setDetectError(i, "第 " + j + " 行 Device Primitive 連續有 " + iDeviceContinueAlignCount + " 個 ALIGN", "前面是 " + sPrevDeviceNonAlign);
                         }
                         
                         iDeviceContinueAlignCount = 0;
                     }
                     
-                    
-                    if (isIllegalPrimitiveChange(sHostPrimitive, sPrevHostPrimitive, sPrevHostNonAlign, I_HOST) ||
-                        isIllegalPrimitiveChange(sDevicePrimitive, sPrevDevicePrimitive, sPrevDeviceNonAlign, I_DEVICE))
+                    if ((sPrevDevicePrimitive != PAYLOAD && sDevicePrimitive != PAYLOAD && isIllegalPrimitiveChange(sHostPrimitive, sPrevHostPrimitive, sPrevHostNonAlign, I_HOST)) ||
+                        (sPrevHostPrimitive != PAYLOAD && sHostPrimitive != PAYLOAD && isIllegalPrimitiveChange(sDevicePrimitive, sPrevDevicePrimitive, sPrevDeviceNonAlign, I_DEVICE)))
                     {
                         setDetectError(i, gsTempError, "第 " + j + " 行 Primitive 發生錯誤");
                     }
