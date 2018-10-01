@@ -19,6 +19,10 @@ function initUI()
     hideDIV("idDownloadErrLog");
     hideDIV("idDownloadErrCSV");    
     
+    var n = b_crc32("https://stackoverflow.com/questions/18638900/javascript-crc32");
+    
+    err("CRC:" + n + "_" + n.toString(16));
+    
 }
 
 function initData()

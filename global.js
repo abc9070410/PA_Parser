@@ -154,6 +154,16 @@ var S_Y_AXIS_TIME_US = "Time (us)";
 var S_X_AXIS_NO = "NO"; // x axis is sequence of NO (ex. Link1, Link2, .... Link100)
 var S_X_AXIS_TIME_MS = "Time (MS)"; // x axis is sequence of time (ex. 10.00s, 10.01s, ... 60.00s)
 
+
+var I_CODE_VIOLATION = 1; // Detection of a code violation does not necessarily indicate that the transmission character in which the code violation was detected is in error. Code violations may result from a prior error that altered the running disparity of the bit stream but did not result in a detectable error at the transmission character in which the error occurred.
+var I_DISPARITY_ERR = 2; // Disparity Error: incorrect disparity was detected one or more times since the last time the bit was cleared. 
+var I_PRIMITIVE_TIMEOUT = 6; // Invalid state transition errors can arise from a number of sources and the Link layer responses to many such error conditions (Primitive Timeout)
+var I_FRAME_LENGTH_ERR = 8; // Frame Length Error : use an illegal Length for specified Frame.
+var I_CRC_ERR = 10; // one or more CRC errors occurred with the Link Layer since the bit was last cleared. If the Transport receives an Frame with an invalid CRC signaled from the Link layer, the Transport layer shall signal the Link layer to negatively acknowledge frame reception by asserting error during the frame acknowledgement handshake.
+var I_DELIMITER_ERR = 13; // This error detects any invalid sequence of SOF/EOF. Extra, missing or invalid SOF or EOF are flagged as the Delimiter Error
+
+var AS_PROTOCOL_ERROR_LIST = [];
+
 // ---------------------------    SVG Option    ---------------------------
 
 var gsAxisXType = S_X_AXIS_NO;
