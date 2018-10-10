@@ -59,6 +59,15 @@ function downloadErrLog()
     log("download err log done");
 }
 
+function downloadCheckCSV()
+{
+    var currentDateTime = getNowTimeStr();
+
+    downloadText2(gsNowFileName + "_CHK_" + currentDateTime + ".csv", gsCheckCSV);
+    
+    log("download check csv done");
+}
+
 function downloadErrCSV()
 {
     var currentDateTime = getNowTimeStr();

@@ -5,6 +5,16 @@ function main()
     addListener();
 }
 
+function addListener()
+{
+    document.getElementById("idLoadFile").addEventListener('change', handleFileSelect, false);
+    
+    document.getElementById("idDownloadLog").addEventListener("click", downloadLog, false);
+    document.getElementById("idDownloadErrLog").addEventListener("click", downloadErrLog, false);
+    document.getElementById("idDownloadCheckCSV").addEventListener("click", downloadCheckCSV, false);
+    document.getElementById("idDownloadErrCSV").addEventListener("click", downloadErrCSV, false);
+}
+
 function initUI()
 {
     log("init data");
@@ -17,12 +27,8 @@ function initUI()
         
     hideDIV("idDownloadLog");
     hideDIV("idDownloadErrLog");
-    hideDIV("idDownloadErrCSV");    
-    
-    var n = b_crc32("https://stackoverflow.com/questions/18638900/javascript-crc32");
-    
-    err("CRC:" + n + "_" + n.toString(16));
-    
+    hideDIV("idDownloadCheckCSV");
+    hideDIV("idDownloadErrCSV");
 }
 
 function initData()
@@ -44,6 +50,8 @@ function initData()
     initCSV();
     
     initTypeInfo();
+    
+    initCheckList();
 }
 
 function initTypeInfo()
@@ -69,14 +77,61 @@ function initTypeInfo()
     }
 }
 
-function addListener()
+function initCheckList()
 {
-    document.getElementById("idLoadFile").addEventListener('change', handleFileSelect, false);
+    var iCnt = 0;
+    var iBase = 0;
+
+    gaaFISCheck[CHECK_TEXT] = [];
+    gaaFISCheck[CHECK_COUNT] = [];
+    gaaFISCheck[CHECK_RESULT] = [];
+    gaaFISCheck[CHECK_DETAIL] = [];
+    gaaFISCheck[CHECK_AMOUNT] = [];
     
-    document.getElementById("idDownloadLog").addEventListener("click", downloadLog, false);
-    document.getElementById("idDownloadErrLog").addEventListener("click", downloadErrLog, false);
-    document.getElementById("idDownloadErrCSV").addEventListener("click", downloadErrCSV, false);
+    for (var i = 0; i < FIS_CHECK_END_BASE; i++)
+    {
+        gaaFISCheck[CHECK_COUNT][i] = 0;
+        gaaFISCheck[CHECK_RESULT][i] = true;
+        gaaFISCheck[CHECK_DETAIL][i] = "NONE";
+    }
+
+    iCnt = 0;
+    iBase = FIS_CHECK_D2H_FIS_BASE[1];
+    
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "Device 收到 COMRESET 之後 , 都有在 1ms 內回應 D2H FIS";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "回應 COMRESET 的 D2H FIS 內容應該是 LBA=1, SecCount=1, Error=1, Status=0x50";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "Device 收到 NCQ cmd 之後 , 都有在 1ms 內回應相對的 D2H FIS";
+    gaaFISCheck[CHECK_AMOUNT][iBase] = iCnt;
+    
+    iCnt = 0;
+    iBase = FIS_CHECK_DATA_FIS_BASE[1];
+    
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "PIO read/write 的 Data FIS 長度是 512 Bytes 的倍數";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "DMA read/write 的 Data FIS 長度是 8KB 的倍數";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "如果 Non NCQ read/write cmd 的 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 D2H FIS";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "如果 NCQ read/write cmd 的 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 SDB FIS";
+    gaaFISCheck[CHECK_AMOUNT][iBase] = iCnt;
+    
+    
+    iCnt = 0;
+    iBase = FIS_CHECK_LPM_BASE[1];
+    
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "Device 收到 Partial 之後 , 都有在 1us 內回應 PMACK/PMNAK";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "Device 收到 Slumber 之後 , 都有在 1us 內回應 PMACK/PMNAK";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "Device 從 Partial 入睡 , 收到 COMWAKE 之後 , 都有在 1us 內回應 COMWAKE";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "Device 從 Slumber 入睡 , 收到 COMWAKE 之後 , 都有在 1us 內回應 COMWAKE";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "Device 啟用 DIPM 之後 , 都有在閒置 3s 內發出 PMREQ";
+    gaaFISCheck[CHECK_AMOUNT][iBase] = iCnt;
+
+    iCnt = 0;
+    iBase = FIS_CHECK_OTHER_BASE[1];
+    
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "Device 啟用 Auto Activate 之後 , 第一個 DMA Setup FIS 之後卻有出現 DMA Activate FIS";
+    gaaFISCheck[CHECK_TEXT][iBase + (iCnt++)] = "Read/Write Multiple cmd 的 Data FIS 長度都有依照之前 Set Multiple 的規範";
+    gaaFISCheck[CHECK_AMOUNT][iBase] = iCnt;
+    
 }
+
 
 
 function handleFileSelect(evt) 
@@ -175,11 +230,14 @@ function parseText()
     }
     
     moveStatusBar(100);
+    
+    buildCheckCSV();
 
     showDIV("idLogTitle");
     
     showDIV("idDownloadLog");
     showDIV("idDownloadErrLog");
+    showDIV("idDownloadCheckCSV");
     showDIV("idDownloadErrCSV");
 }
 

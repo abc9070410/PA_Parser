@@ -410,10 +410,44 @@ var gbStatisticError = false;
 // output CSV file (recommend CSVFileView : https://www.nirsoft.net/utils/csv_file_view.html )
 //
 var giErrorCSVIdx = 0;
-var gsErrorCSV = "錯誤編號,錯誤地點,錯誤類別,錯誤原因,錯誤描述\n";
-var gsTempError = "";
-var gsVerifyCSV = "";
+var gsErrorCSV = "編號,錯誤地點,錯誤類別,錯誤原因,錯誤描述\n";
 
+var gsTempError = "";
+
+var giCheckCSVIdx = 0;
+var gsCheckCSV = "編號,檢查類別,檢查項目,檢查結果,檢查描述\n";
+
+var giVerifyCSVIdx = 0;
+var gsVerifyCSV = "編號,驗證類別,驗證項目,驗證結果,驗證描述\n";
+
+
+var FIS_CHECK_D2H_FIS_BASE = ["D2H FIS相關", 0];
+var FIS_CHECK_DATA_FIS_BASE = ["DATA FIS相關", 10];
+var FIS_CHECK_LPM_BASE = ["LPM相關",20];
+var FIS_CHECK_OTHER_BASE = ["其他相關",30];
+var FIS_CHECK_END_BASE = 40;
+
+var FIS_CHECK_BASE_LIST = [
+    FIS_CHECK_D2H_FIS_BASE, 
+    FIS_CHECK_DATA_FIS_BASE,
+    FIS_CHECK_LPM_BASE,
+    FIS_CHECK_OTHER_BASE
+];
+
+
+
+var CHECK_TEXT = 0;
+var CHECK_COUNT = 1;
+var CHECK_RESULT = 2;
+var CHECK_DETAIL = 3;
+var CHECK_AMOUNT = 4;
+var gaaFISCheck = [];
+
+var PRIMITIVE_CHECK_LIST = [
+    "SATA_SOF -> PAYLOAD -> CRC -> SATA_EOF"
+];
+var gaiPrimitiveCheckCount = [];
+var gabPrimitiveCheckPASS = [];
 
 //
 // Policy
