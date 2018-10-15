@@ -607,6 +607,7 @@ function buildCSV()
             {
                 iCRSTIdx = i;
                 
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_D2H_IDX_0]++;
                 gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_0]++;
                 
                 if (isDeviceOOB(i+1) && isCominit(i+1))
@@ -660,12 +661,29 @@ function buildCSV()
             {
                 if (isDeviceOOB(i+1) && isComwake(i+1))
                 {
+                    iTempDuration = getDurationUS(i, i+1);
+                    
                     //log("COMWAKE:" + getClaim(i) + " -> " + getClaim(i+1));
                     //log(getDurationUS(i, i+1) + " = " + getStartTime(i+1) + " - " + getEndTime(i));
-                    addDrawCSV(IDX_CSV_COMWAKE_RESPONSE, i, getDurationUS(i, i+1));
+                    addDrawCSV(IDX_CSV_COMWAKE_RESPONSE, i, iTempDuration);
                     
                     if (bCominit || bPartial || bSlumber)
                     {
+                        if (bPartial)
+                        {
+                            if (iTempDuration < 10)
+                            {
+                                gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_1]++;
+                            }
+                        }
+                        else if (bSlumber)
+                        {
+                            if (iTempDuration < (10 * 1000))
+                            {
+                                gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_2]++;
+                            }
+                        }
+                        
                     }
                     else
                     {
@@ -719,6 +737,22 @@ function buildCSV()
                     {
                         gaaFISCheck[CHECK_PASS_CNT][CHECK_LPM_IDX_0]++;
                     }
+                    
+                    if (isPMACK(i+1))
+                    {
+                        if (getPrimitiveCnt(i+1) >= 4)
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_4]++;
+                        }
+                    }
+                    else if (isPMNAK(i+1))
+                    {
+                        // cannot see SYNC...
+                        if (isHostFIS(i+2) || isHostOOB(i+2) || isHostPrimitive(i+2))
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_4]++;
+                        }
+                    }
                 }
                 else if ((i+1) < giPAIndex)
                 {
@@ -750,6 +784,22 @@ function buildCSV()
                     if (iTempDuration < 100)
                     {
                         gaaFISCheck[CHECK_PASS_CNT][CHECK_LPM_IDX_1]++;
+                    }
+                    
+                    if (isPMACK(i+1))
+                    {
+                        if (getPrimitiveCnt(i+1) >= 4)
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_5]++;
+                        }
+                    }
+                    else if (isPMNAK(i+1))
+                    {
+                        // cannot see SYNC...
+                        if (isHostFIS(i+2) || isHostOOB(i+2) || isHostPrimitive(i+2))
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_5]++;
+                        }
                     }
                 }
                 else if ((i+1) < giPAIndex)
@@ -921,11 +971,18 @@ function buildCSV()
                 // D2H FIS for COMRESET
                 bCRST = false;
                 
+                iTempDuration = getDurationUS(iCRSTIdx, i);
+                
                 log(getClaim(iCRSTIdx) + " -> " + getClaim(i));
                 log(getStartTime(iCRSTIdx) + " -> " + getStartTime(i));
                 
                 // COMRESET response time 2: between COMRESET and D2H FIS
-                //addDrawCSV(IDX_CSV_COMRESET_RESPONSE, iCRSTIdx, getDurationUS(iCRSTIdx, i));
+                //addDrawCSV(IDX_CSV_COMRESET_RESPONSE, iCRSTIdx, iTempDuration);
+                
+                if (iTempDuration > (100 * 1000))
+                {
+                    gaaFISCheck[CHECK_TOTAL_CNT][CHECK_D2H_IDX_0]++;
+                }
             }
             else if (bNCQ)
             {

@@ -923,6 +923,25 @@ function getPrimitiveType(i)
     return gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE];
 }
 
+function getPrimitiveCnt(i)
+{
+    var sTemp = getPrimitiveType(i);
+    
+    var iStart = sTemp.indexOf("(x");
+    var iEnd = sTemp.indexOf(") ");
+    
+    if (iStart < 0 || iEnd < iStart)
+    {
+        return "NULL";
+    }
+    
+    var sNum = sTemp.substring(iStart + 2, iEnd);
+    
+    err(sTemp + ":" + iStart + "," + iEnd + "->" + sNum);
+    
+    return getNumber(sNum);
+}
+
 function isPartial(i)
 {
     return isLegalPAIdx(i) && 
@@ -1655,8 +1674,10 @@ function buildCheckCSV()
             
             err(i + ":" + gaaFISCheck[CHECK_TEXT][iBase + i] + "_" + gaaFISCheck[CHECK_RESULT][iBase + i] + "_" +  gaaFISCheck[CHECK_DETAIL][iBase + i]);
             
+            var bPass = gaaFISCheck[CHECK_TOTAL_CNT][iBase + i] == gaaFISCheck[CHECK_PASS_CNT][iBase + i];
+            
             addCheckCSV(sNo, sType, 
-                gaaFISCheck[CHECK_TEXT][iBase + i], gaaFISCheck[CHECK_RESULT][iBase + i], 
+                gaaFISCheck[CHECK_TEXT][iBase + i], bPass, 
                 gaaFISCheck[CHECK_TOTAL_CNT][iBase + i], gaaFISCheck[CHECK_PASS_CNT][iBase + i],
                 gaaFISCheck[CHECK_DETAIL][iBase + i]);
         }

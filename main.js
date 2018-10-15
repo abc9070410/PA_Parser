@@ -97,7 +97,7 @@ function initCheckList()
         gaaFISCheck[CHECK_DETAIL][i] = "NONE";
     }
     
-    gaaFISCheck[CHECK_TEXT][CHECK_D2H_IDX_0] = "Device 收到 COMRESET 之後 , 都有在 1ms 內回應 D2H FIS";
+    gaaFISCheck[CHECK_TEXT][CHECK_D2H_IDX_0] = "Device 收到 COMRESET 之後 , 都有在 100ms 內回應 D2H FIS";
     gaaFISCheck[CHECK_TEXT][CHECK_D2H_IDX_1] = "回應 COMRESET 的 D2H FIS 內容應該是 LBA=1, SecCount=1, Error=1, Status=0x50";
     gaaFISCheck[CHECK_TEXT][CHECK_D2H_IDX_2] = "Device 收到 NCQ cmd 之後 , 都有在 1ms 內回應相對的 D2H FIS";
     gaaFISCheck[CHECK_AMOUNT][CHECK_D2H_IDX_0] = 3;
