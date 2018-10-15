@@ -1632,10 +1632,10 @@ function addErrorCSV(i, sType, sResult, sDescription)
 
 // about check csv
 
-function addCheckCSV(sType, sItem, bResult, sDetail)
+function addCheckCSV(sNo, sType, sItem, bResult, iTotalCnt, iPassCnt, sDetail)
 {
-    gsCheckCSV += giCheckCSVIdx + "," + formatTextInCSV(sType) + "," + formatTextInCSV(sItem) + "," + 
-                  (bResult ? "PASS" : "FAIL") + "," + formatTextInCSV(sDetail) + "\n";
+    gsCheckCSV += sNo + "," + formatTextInCSV(sType) + "," + formatTextInCSV(sItem) + "," + 
+                  (bResult ? "PASS" : "FAIL") + "," + iTotalCnt + "," + iPassCnt + "," + formatTextInCSV(sDetail) + "\n";
     
     giCheckCSVIdx++;
 }
@@ -1651,8 +1651,14 @@ function buildCheckCSV()
         
         for (var i = 0; i < iCount; i++)
         {
+            var sNo = (iBase / 10) + "-" + i;
+            
             err(i + ":" + gaaFISCheck[CHECK_TEXT][iBase + i] + "_" + gaaFISCheck[CHECK_RESULT][iBase + i] + "_" +  gaaFISCheck[CHECK_DETAIL][iBase + i]);
-            addCheckCSV(sType, gaaFISCheck[CHECK_TEXT][iBase + i], gaaFISCheck[CHECK_RESULT][iBase + i], gaaFISCheck[CHECK_DETAIL][iBase + i]);
+            
+            addCheckCSV(sNo, sType, 
+                gaaFISCheck[CHECK_TEXT][iBase + i], gaaFISCheck[CHECK_RESULT][iBase + i], 
+                gaaFISCheck[CHECK_TOTAL_CNT][iBase + i], gaaFISCheck[CHECK_PASS_CNT][iBase + i],
+                gaaFISCheck[CHECK_DETAIL][iBase + i]);
         }
     }
 }

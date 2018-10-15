@@ -67,9 +67,11 @@ function parseFIS(asLineToken, iTextLineIdx)
                 {
                     bIsData = false;
                     
-                    log(getClaim(giPAIndex) + ": Data length:" + gaasFISSeq[giFISIndex][TAG_FIS[IDX_FIS_DATA][1]].length);
-                    //err(gaasFISSeq[giFISIndex][TAG_FIS[IDX_FIS_DATA][1]]);
+                    var sData =  gaasFISSeq[giFISIndex][TAG_FIS[IDX_FIS_DATA][1]];
                     
+                    log(getClaim(giPAIndex) + ": Data length:" + (sData.length / 2));
+                    //err(gaasFISSeq[giFISIndex][TAG_FIS[IDX_FIS_DATA][1]]);
+
                     break;
                 }
             }
@@ -582,6 +584,7 @@ function buildCSV()
     var bPartial = false;
     var bSlumber = false;
     var bCominit = false;
+    var iTempDuration = 0;
     
     for (var i = 0; i < 32; i++)
     {
@@ -604,10 +607,19 @@ function buildCSV()
             {
                 iCRSTIdx = i;
                 
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_0]++;
+                
                 if (isDeviceOOB(i+1) && isCominit(i+1))
                 {
+                    var iTempDuration = getDurationUS(i, i+1);
+                    
                     // COMRESET response time 1: between COMRESET and COMINIT
-                    addDrawCSV(IDX_CSV_COMRESET_RESPONSE, i, getDurationUS(i, i+1));
+                    addDrawCSV(IDX_CSV_COMRESET_RESPONSE, i, iTempDuration);
+                    
+                    if (iTempDuration < (10 * 1000))
+                    {
+                        gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_0]++;
+                    }
                 }
                 else if ((i+1) < giPAIndex)
                 {
@@ -690,11 +702,23 @@ function buildCSV()
             
             if (isPartial(i))
             {
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LPM_IDX_0]++;
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_1]++;
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_3]++;
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_4]++;
+                
                 if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
                 {
-                    addDrawCSV(IDX_CSV_PARTIAL_RESPONSE, i, getDurationUS(i, i+1));
+                    iTempDuration = getDurationUS(i, i+1);
+                    
+                    addDrawCSV(IDX_CSV_PARTIAL_RESPONSE, i, iTempDuration);
                     
                     setPartialType(i, isPMACK(i+1), isPMNAK(i+1));
+                    
+                    if (iTempDuration < 100)
+                    {
+                        gaaFISCheck[CHECK_PASS_CNT][CHECK_LPM_IDX_0]++;
+                    }
                 }
                 else if ((i+1) < giPAIndex)
                 {
@@ -712,11 +736,21 @@ function buildCSV()
             }
             else if (isSlumber(i))
             {
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LPM_IDX_1]++;
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_2]++;
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_3]++;
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_5]++;
+                
                 if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
                 {
                     addDrawCSV(IDX_CSV_SLUMBER_RESPONSE, i, getDurationUS(i, i+1));
                     
                     setSlumberType(i, isPMACK(i+1), isPMNAK(i+1));
+                    
+                    if (iTempDuration < 100)
+                    {
+                        gaaFISCheck[CHECK_PASS_CNT][CHECK_LPM_IDX_1]++;
+                    }
                 }
                 else if ((i+1) < giPAIndex)
                 {
