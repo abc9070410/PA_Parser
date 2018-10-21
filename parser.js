@@ -586,6 +586,20 @@ function buildCSV()
     var bCominit = false;
     var iTempDuration = 0;
     
+    var iProtocolError = 0;
+    var iProtocolErrorIdx = 0;
+    var bDataLengthErr = false;
+    
+    var bDMACmd = false;
+    var bPIOCmd = false;
+    var bNonDataCmd = false;
+    
+    var bWrite = false;
+    var bRead = false;
+    
+    var iTotalBytes = 0;
+    var iExpectBytes = 0;
+    
     for (var i = 0; i < 32; i++)
     {
         iNCQIdx[i] = -1;
@@ -832,6 +846,26 @@ function buildCSV()
         }
         else if (isNCQ(i))
         {
+            bNCQ = true;
+            
+            bDMACmd = true;
+            bPIOCmd = false;
+            bNonDataCmd = false;
+            
+            if (isDataOutCmd(i))
+            {
+                bWrite = true;
+                bRead = false;
+            }
+            else if (isDataInCmd(i))
+            {
+                bWrite = false;
+                bRead = true;
+            }
+            
+            iExpectBytes = getTransferSectors(i) * 512;
+            iTotalBytes = 0;
+            
             if (bPIORead) // ex. IDFY -> NCQ read/write
             {
                 addDrawCSV(IDX_CSV_CMD_DURATION, iNonNCQIdx, getDurationUS(iNonNCQIdx, iDataFISIdx));
@@ -846,8 +880,6 @@ function buildCSV()
             }
             
             var iTag = getNCQTag(i);
-            
-            bNCQ = true;
             
             if (iNCQIdx[iTag] == -1)
             {
@@ -896,9 +928,76 @@ function buildCSV()
             {
                 bNCQ = false;
             }
+            
+            if (iProtocolError != 0)
+            {
+                if (isErrorResponse(i))
+                {
+                    if (iProtocolError == I_FRAME_LENGTH_ERR)
+                    {
+                        gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_2]++;
+                    }
+                    else if (iProtocolError == I_CRC_ERR)
+                    {
+                        gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_3]++;
+                    }
+                }
+                
+                iProtocolError = 0; // init for next parse
+            }
+            
+            if (bDataLengthErr)
+            {
+                if (isErrorResponse(i))
+                {
+                    if (bWrite)
+                    {
+                        gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_1]++;
+                    }
+                    else
+                    {
+                        gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_0]++;
+                    }
+                }
+                
+                bDataLengthErr = 0; // init for next parse
+            }
         }
         else if (isNonNCQ(i))
         {
+            if (isDMACmd(i))
+            {
+                bDMACmd = true;
+                bPIOCmd = false;
+                bNonDataCmd = false;
+            }
+            else if (isPIORead(i))
+            {
+                bDMACmd = false;
+                bPIOCmd = true;
+                bNonDataCmd = false;
+            }
+            else
+            {
+                bDMACmd = false;
+                bPIOCmd = false;
+                bNonDataCmd = true;
+            }
+            
+            if (isDataOutCmd(i))
+            {
+                bWrite = true;
+                bRead = false;
+            }
+            else if (isDataInCmd(i))
+            {
+                bWrite = false;
+                bRead = true;
+            }
+            
+            iExpectBytes = getTransferSectors(i) * 512;
+            iTotalBytes = 0;
+            
             if (bNonNCQ && !bPIORead)
             {
                 setDrawError(i, "在此之前 , " + getClaim(iNonNCQIdx) + " 還沒有送出 D2H FIS");
@@ -955,6 +1054,45 @@ function buildCSV()
         else if (isDataFIS(i))
         {
             iDataFISIdx = i;
+            
+            var iDataLength = getDataFISLength(i);
+            
+            iTotalBytes += iDataLength;
+            
+            err(getClaim(i) + ":" + iDataLength + "+" + iTotalBytes + " <<<<<<<<< " + iExpectBytes);
+            
+            if ((iTotalBytes != iExpectBytes) &&
+                ((bPIOCmd && (iDataLength % 512) != 0) ||            // ex. expected receive 1KB , but actual received 900 Bytes
+                 (bDMACmd && (iDataLength % 8192) != 0) ||           // ex. expected receive 8KB , but actual received 4KB
+                 (iExpectBytes != 0 && iTotalBytes > iExpectBytes))) // ex. expected receive 1KB , but actual received 8KB
+            {
+                bDataLengthErr = true;
+                
+                //err(getClaim(i) + "_iDataLength:" + iDataLength);
+                
+                if (bNCQ)
+                {
+                    if (bWrite)
+                    {
+                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_1]++;
+                    }
+                    else 
+                    {
+                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_0]++;
+                    }
+                }
+                else
+                {
+                    if (bWrite)
+                    {
+                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_1]++;
+                    }
+                    else 
+                    {
+                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0]++;
+                    }
+                }
+            }
         }
         else if (isD2HFIS(i))
         {
@@ -965,6 +1103,40 @@ function buildCSV()
                 addDrawCSV(IDX_CSV_CMD_DURATION, iNonNCQIdx, getDurationUS(iNonNCQIdx, i));
             
                 bNonNCQ = false;
+
+                if (iProtocolError != 0)
+                {
+                    if (isErrorResponse(i))
+                    {
+                        if (iProtocolError == I_FRAME_LENGTH_ERR)
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_2]++;
+                        }
+                        else if (iProtocolError == I_CRC_ERR)
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_3]++;
+                        }
+                    }
+                    
+                    iProtocolError = 0; // init for next parse
+                }
+                
+                if (bDataLengthErr)
+                {
+                    if (isErrorResponse(i))
+                    {
+                        if (bWrite)
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_1]++;
+                        }
+                        else
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0]++;
+                        }
+                    }
+                    
+                    bDataLengthErr = 0; // init for next parse
+                }
             }
             else if (bCRST)
             {
@@ -992,8 +1164,67 @@ function buildCSV()
             {
                 setDrawError(i, " 這個 D2H FIS 之前沒有 non-NCQ cmd 也沒有 COMRESET");
             }
-            
         }
+        
+        // check error
+        if (isHostFIS(i))
+        {
+            if (existProtoclError(i))
+            {
+                iProtocolError = getProtocolError(i);
+                iProtocolErrorIdx = i;
+                
+                if (isCmdFIS(i))
+                {
+                    var pass = !isDeviceFIS(i+1);
+                    
+                    if (bNCQ)
+                    {
+                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_4]++;
+                        
+                        if (pass)
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_4]++;   
+                        }
+                    }
+                    else if (bNonNCQ)
+                    {
+                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_4]++;
+                        
+                        if (pass)
+                        {
+                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_4]++;   
+                        }
+                    }
+                }
+                else if (isDataFIS(i))
+                {
+                    if (iProtocolError == I_FRAME_LENGTH_ERR)
+                    {
+                        if (bNCQ)
+                        {
+                            gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_2]++;
+                        }
+                        else if (bNonNCQ)
+                        {
+                            gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_2]++;
+                        }
+                    }
+                    else if (iProtocolError == I_CRC_ERR)
+                    {
+                        if (bNCQ)
+                        {
+                            gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_3]++;
+                        }
+                        else if (bNonNCQ)
+                        {
+                            gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_3]++;
+                        }
+                    }
+                }
+            }
+        }
+        
     }
 }
 

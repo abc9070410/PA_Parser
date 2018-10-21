@@ -57,9 +57,29 @@ function formatPATime(str)
     return newStr;
 }
 
+function existProtoclError(i)
+{
+    return (getProtocolError(i) && getProtocolError(i) != 0)
+}
+
 function getProtocolError(i)
 {
-    return getNumber(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_ERROR], 10);
+    if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE)
+    {
+        return getNumber(formatPATime(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_ERROR]), 10);
+    }
+    else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS)
+    {
+        return getNumber(formatPATime(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_ERROR]), 10);
+    }
+    else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB)
+    {
+        return getNumber(formatPATime(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_ERROR]), 10);
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 function getStartTime(i)
@@ -248,6 +268,16 @@ function isDMACmd(i)
     return getCmdInfo(i).indexOf("DMA") >= 0;
 }
 
+function isPIOCmd(i)
+{
+    if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)
+    {
+        return false;
+    }
+
+    return getCmdInfo(i).indexOf("PIO") >= 0;
+}
+
 
 function isNonDataCmd(i)
 {
@@ -271,8 +301,48 @@ function isNonNCQ(i)
     return isH2DFIS(i) && !isNCQ(i); 
 }
 
+
+function isDataInCmd(i) // read direction
+{
+    if (isH2DFIS(i))
+    {
+        var asOP = ["87", "EC", "E4", "C8", "25", "C7", "26", "2F", "47", "C4", "29", "20", "24", "2A", "2B", "60"];
+        
+        for (var j = 0; j < asOP.length; j++)
+        {
+            if (gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_COMMAND].indexOf(asOP[j]) == 0)
+            {
+                return true;
+            }
+        }
+    }
+           
+    return false;
+}
+
+function isDataOutCmd(i) // write direction
+{
+    //err("XXX"+getClaim(i) +":" + gaasFISSeq[gaasPASeq[i][IDX_PA_NO]]);
+    
+    //err("YYY:"+gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_COMMAND]);
+    if (isH2DFIS(i))
+    {
+        var asOP = ["92","F2","D6","E8","CA","35","3D","CC","36","3F","57","C5","39","30","3A","3B","61"];
+        
+        for (var j = 0; j < asOP.length; j++)
+        {
+            if (gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_COMMAND].indexOf(asOP[j]) == 0)
+            {
+                return true;
+            }
+        }
+    }
+           
+    return false;
+}
+
 // get sector count of NCQ or non-NCQ cmd
-function getTransferKB(i)
+function getTransferSectors(i)
 {
     var iSectorCnt = 0;
     
@@ -294,7 +364,12 @@ function getTransferKB(i)
         return 0;
     }
     
-    return iSectorCnt / 2;
+    return iSectorCnt;
+}
+
+function getTransferKB(i)
+{
+    return getTransferSectors(i) / 2;
 }
 
 // ex. sectors=0x38(56) -> tag=56/8 = 7
@@ -351,6 +426,7 @@ function isCBit0(i)
            gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_CBIT] == "0";
 }
 
+// ex. return "00000001"
 function getSActiveHex(i)
 {
     if (!isSDBFIS(i))
@@ -802,6 +878,19 @@ function getError(i)
     return getFISIntegerValue(IDX_FIS_ERROR, i);
 }
 
+function isErrorResponse(i)
+{
+    if (isSDBFIS(i))
+    {
+        return (getError(i) == 0x84 && getSActiveHex(i) == "00000000");
+    }
+    else if (isD2HFIS(i))
+    {
+        return (getError(i) == 0x84 && getStatus(i) == 0x51);
+    }
+    
+    return false;
+}
 
 function getFeature(i)
 {
@@ -1637,7 +1726,14 @@ function getNowTimeStr()
 
 function formatTextInCSV(sText)
 {
-    return sText.replace(/\s,\s/g, "，").replace(/,/g, "/");
+    //err("formatTextInCSV:::"+sText);
+    
+    if (sText)
+    {
+        return sText.replace(/\s,\s/g, "，").replace(/,/g, "/");
+    }
+    
+    return "NOT_STRING";
 }
 
 function addErrorCSV(i, sType, sResult, sDescription)

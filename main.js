@@ -104,10 +104,8 @@ function initCheckList()
     
     gaaFISCheck[CHECK_TEXT][CHECK_DATA_IDX_0] = "PIO read/write 的 Data FIS 長度是 512 Bytes 的倍數";
     gaaFISCheck[CHECK_TEXT][CHECK_DATA_IDX_1] = "DMA read/write 的 Data FIS 長度是 8KB 的倍數";
-    gaaFISCheck[CHECK_TEXT][CHECK_DATA_IDX_2] = "如果 Non NCQ read/write cmd 的 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 D2H FIS";
-    gaaFISCheck[CHECK_TEXT][CHECK_DATA_IDX_3] = "如果 NCQ read/write cmd 的 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 SDB FIS";
     //gaaFISCheck[CHECK_TEXT][] = "Device 收到 unrecognized FIS  , 應該回應 R_ERR  ";
-    gaaFISCheck[CHECK_AMOUNT][CHECK_DATA_IDX_0] = 4;
+    gaaFISCheck[CHECK_AMOUNT][CHECK_DATA_IDX_0] = 2;
     
     gaaFISCheck[CHECK_TEXT][CHECK_LPM_IDX_0] = "Device 收到 Partial 之後 , 都有在 100us 內回應 PMACK/PMNAK";
     gaaFISCheck[CHECK_TEXT][CHECK_LPM_IDX_1] = "Device 收到 Slumber 之後 , 都有在 100us 內回應 PMACK/PMNAK";
@@ -121,6 +119,24 @@ function initCheckList()
     gaaFISCheck[CHECK_TEXT][CHECK_LOGO_IDX_4] = "Device 收到 PMREQ_P , 可以有兩種作法: 1. 回至少 4 個 PMACK 並且進入 Partial state  2. 回 PMNAK , 直到 host 送出 SYNC 為止"; // IPM-04
     gaaFISCheck[CHECK_TEXT][CHECK_LOGO_IDX_5] = "Device 收到 PMREQ_S , 可以有兩種作法: 1. 回至少 4 個 PMACK 並且進入 Slumber state  2. 回 PMNAK , 直到 host 送出 SYNC 為止"; // IPM-05
     gaaFISCheck[CHECK_AMOUNT][CHECK_LOGO_IDX_0] = 6;
+    
+    // PS: 對於Read Data FIS , 檢查不出長度正常但被Host 回 R_ERR的case
+    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_0] = "如果 NCQ read cmd 的 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_1] = "如果 NCQ Write cmd 的 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_2] = "如果 NCQ cmd 的 Data FIS 被 PA 檢查出 Frame Length Error (Protocl Error=8) , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_3] = "如果 NCQ cmd 的 Data FIS 被 PA 檢查出 CRC Error (Protocl Error=10) , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_4] = "如果 NCQ cmd 的 Cmd FIS 被 PA 檢查出 Error , 那 Device 不須回應 D2H/SDB FIS";
+    gaaFISCheck[CHECK_AMOUNT][CHECK_NCQ_ERR_HANDLE_IDX_0] = 5;
+    
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0] = "如果 Non-NCQ Read cmd 的 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 D2H FIS (STATUS=0x51 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_1] = "如果 Non-NCQ Write cmd 的 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 D2H FIS (STATUS=0x51 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_2] = "如果 Non-NCQ cmd 的 Data FIS 被 PA 檢查出 Frame Length Error (Protocl Error=8) , 那 Device 需回應帶 Error 的 D2H FIS (SACTIVE=0 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_3] = "如果 Non-NCQ cmd 的 Data FIS 被 PA 檢查出 CRC Error (Protocl Error=10) , 那 Device 需回應帶 Error 的 D2H FIS (SACTIVE=0 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_4] = "如果 Non-NCQ cmd 的 Cmd FIS 被 PA 檢查出 Error , 那 Device 不須回應 D2H FIS";
+    //gaaFISCheck[CHECK_TEXT][CHECK_ERR_HANDLE_IDX_8] = "如果 Non-NCQ/NCQ cmd 被 PA 檢查出 Delimiter Error (Protocl Error=13) , 那 Device 不須回應 D2H/SDB FIS ??";
+    gaaFISCheck[CHECK_AMOUNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0] = 5;
+    
+    
     
     gaaFISCheck[CHECK_TEXT][CHECK_OTHER_IDX_0] = "Device 啟用 Auto Activate 之後 , 第一個 DMA Setup FIS 之後卻有出現 DMA Activate FIS";
     gaaFISCheck[CHECK_TEXT][CHECK_OTHER_IDX_1] = "Read/Write Multiple cmd 的 Data FIS 長度都有依照之前 Set Multiple 的規範";

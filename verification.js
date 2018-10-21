@@ -644,13 +644,13 @@ function checkDataFIS()
             {
                 iDataFISCnt++;
                 
-                var iDataLength = getDataFISLength(i);
+                var bProtocolError  = getDataFISLength(i);
                 
-                log(getClaim(i) + ":" + iDataLength);
+                log(getClaim(i) + ":" + bProtocolError );
                 
                 if (isDMA) // DMA read/write cmd
                 {
-                    if ((iDataLength % 8192) != 0)
+                    if ((bProtocolError  % 8192) != 0)
                     {
                         setFailInfo(i, "Data FIS 資料長度並沒有 aligned 8KB");
                     }
@@ -661,7 +661,7 @@ function checkDataFIS()
                 }
                 else if (isPIO) // PIO read/write cmd
                 {
-                    if ((iDataLength % 512) != 0)
+                    if ((bProtocolError  % 512) != 0)
                     {
                         setFailInfo(i, "Data FIS 資料長度並沒有 aligned 512Bytes");
                     }
@@ -759,15 +759,15 @@ function detectFIS()
             }
             else if (isDataFIS(i))
             {
-                var iDataLength = getDataFISLength(i);
+                var bProtocolError  = getDataFISLength(i);
                 
-                iDataByte += iDataLength;
+                iDataByte += bProtocolError ;
                 
-                log(getClaim(i) + ":" + iDataLength);
+                log(getClaim(i) + ":" + bProtocolError );
                 
                 // check SDB/D2H after undone Data FIS on read cmd (undone reason could be DMAT or SYNC from Host)
                 if ((iDataByte != iExpectDataByte) &&
-                    ((isDMA && iDataLength != 8192) || (isPIO && iDataLength != 512)))
+                    ((isDMA && bProtocolError  != 8192) || (isPIO && bProtocolError  != 512)))
                 {   
                     log("Expect:" + iExpectDataByte + ", Actual:" + iDataByte);
                     if (isD2HFIS(i+1))
@@ -775,7 +775,7 @@ function detectFIS()
                         if ((getStatus(i+1) & 1) != 1 ||
                             (getError(i+1) & 4) != 4)
                         {
-                            setDetectError(i, "資料長度錯誤的 Data FIS (" + iDataLength + "bytes) 之後的 D2H FIS 內容錯誤", 
+                            setDetectError(i, "資料長度錯誤的 Data FIS (" + bProtocolError  + "bytes) 之後的 D2H FIS 內容錯誤", 
                                 "Status:" + getStatus(i+1) + " , Error:" + getError(i+1));
                         }
                     }
@@ -790,7 +790,7 @@ function detectFIS()
                     }
                     else
                     {
-                        setDetectError(i, "不完整的 Data FIS 之後沒有 D2H/SDB FIS", "Data FIS 長度只有" + iDataLength);
+                        setDetectError(i, "不完整的 Data FIS 之後沒有 D2H/SDB FIS", "Data FIS 長度只有" + bProtocolError );
                     }
                 }
             }
