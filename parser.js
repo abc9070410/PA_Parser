@@ -621,7 +621,7 @@ function buildCSV()
             {
                 iCRSTIdx = i;
                 
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_D2H_IDX_0]++;
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_D2H_FIS_IDX_0]++;
                 gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_0]++;
                 
                 if (isDeviceOOB(i+1) && isCominit(i+1))
@@ -892,6 +892,16 @@ function buildCSV()
                 setDrawError(i, "Tag" + iTag + " 尚未完成還來新的 NCQ cmd");
             }
             
+            if (isCBit0(i))
+            {
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_5]++;
+                
+                if (!isD2HFIS(i+1))
+                {
+                    gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_5]++;
+                }
+            }
+            
             setCmdType(i);
         }
         else if (isSDBFIS(i))
@@ -1037,6 +1047,13 @@ function buildCSV()
             else if (isCBit0(i))
             {
                 setDrawError(i, " is illegal cause C bit is 0");
+                
+                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_5]++;
+                
+                if (!isD2HFIS(i+1))
+                {
+                    gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_5]++;
+                }
             }
             else
             {
@@ -1059,7 +1076,7 @@ function buildCSV()
             
             iTotalBytes += iDataLength;
             
-            err(getClaim(i) + ":" + iDataLength + "+" + iTotalBytes + " <<<<<<<<< " + iExpectBytes);
+            //err(getClaim(i) + ":" + iDataLength + "+" + iTotalBytes + " <<<<<<<<< " + iExpectBytes);
             
             if ((iTotalBytes != iExpectBytes) &&
                 ((bPIOCmd && (iDataLength % 512) != 0) ||            // ex. expected receive 1KB , but actual received 900 Bytes
@@ -1151,9 +1168,9 @@ function buildCSV()
                 // COMRESET response time 2: between COMRESET and D2H FIS
                 //addDrawCSV(IDX_CSV_COMRESET_RESPONSE, iCRSTIdx, iTempDuration);
                 
-                if (iTempDuration > (100 * 1000))
+                if (iTempDuration < (100 * 1000))
                 {
-                    gaaFISCheck[CHECK_TOTAL_CNT][CHECK_D2H_IDX_0]++;
+                    gaaFISCheck[CHECK_PASS_CNT][CHECK_D2H_FIS_IDX_0]++;
                 }
             }
             else if (bNCQ)
