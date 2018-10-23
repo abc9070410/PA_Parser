@@ -158,6 +158,7 @@ var S_X_AXIS_TIME_MS = "Time (MS)"; // x axis is sequence of time (ex. 10.00s, 1
 var I_CODE_VIOLATION = 1; // Detection of a code violation does not necessarily indicate that the transmission character in which the code violation was detected is in error. Code violations may result from a prior error that altered the running disparity of the bit stream but did not result in a detectable error at the transmission character in which the error occurred.
 var I_DISPARITY_ERR = 2; // Disparity Error: incorrect disparity was detected one or more times since the last time the bit was cleared. 
 var I_PRIMITIVE_TIMEOUT = 6; // Invalid state transition errors can arise from a number of sources and the Link layer responses to many such error conditions (Primitive Timeout)
+var I_FRAME_TYPE_ERR = 7; // Frame Type Error:use an illegal type in Frame Type Field.
 var I_FRAME_LENGTH_ERR = 8; // Frame Length Error : use an illegal Length for specified Frame.
 var I_CRC_ERR = 10; // one or more CRC errors occurred with the Link Layer since the bit was last cleared. If the Transport receives an Frame with an invalid CRC signaled from the Link layer, the Transport layer shall signal the Link layer to negatively acknowledge frame reception by asserting error during the frame acknowledgement handshake.
 var I_DELIMITER_ERR = 13; // This error detects any invalid sequence of SOF/EOF. Extra, missing or invalid SOF or EOF are flagged as the Delimiter Error
@@ -410,15 +411,15 @@ var gbStatisticError = false;
 // output CSV file (recommend CSVFileView : https://www.nirsoft.net/utils/csv_file_view.html )
 //
 var giErrorCSVIdx = 0;
-var gsErrorCSV = "編號,錯誤地點,錯誤類別,錯誤原因,錯誤描述\n";
+var gsErrorCSV = "\ufeff編號,錯誤地點,錯誤類別,錯誤原因,錯誤描述\n";
 
 var gsTempError = "";
 
 var giCheckCSVIdx = 0;
-var gsCheckCSV = "編號,檢查類別,檢查項目,檢查結果,檢查次數,通過次數,檢查描述\n";
+var gsCheckCSV = "\ufeff編號,檢查類別,檢查項目,檢查結果,檢查次數,通過次數,檢查描述,錯誤地點,正確地點,所有地點\n";
 
 var giVerifyCSVIdx = 0;
-var gsVerifyCSV = "編號,驗證類別,驗證項目,驗證結果,驗證描述\n";
+var gsVerifyCSV = "\ufeff編號,驗證類別,驗證項目,驗證結果,驗證描述\n";
 
 
 var FIS_CHECK_D2H_FIS_BASE = ["D2H FIS相關", 10];
@@ -522,7 +523,10 @@ var CHECK_RESULT = 1;
 var CHECK_TOTAL_CNT = 2;
 var CHECK_PASS_CNT = 3;
 var CHECK_DETAIL = 4;
-var CHECK_AMOUNT = 5;
+var CHECK_FAIL_TRACE = 5;
+var CHECK_PASS_TRACE = 6;
+var CHECK_TOTAL_TRACE = 7;
+var CHECK_AMOUNT = 8;
 var gaaFISCheck = [];
 
 var PRIMITIVE_CHECK_LIST = [

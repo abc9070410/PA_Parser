@@ -81,13 +81,11 @@ function initCheckList()
 {
     var iCnt = 0;
     var iBase = 0;
-
-    gaaFISCheck[CHECK_TEXT] = [];
-    gaaFISCheck[CHECK_RESULT] = [];
-    gaaFISCheck[CHECK_TOTAL_CNT] = [];
-    gaaFISCheck[CHECK_PASS_CNT] = [];
-    gaaFISCheck[CHECK_DETAIL] = [];
-    gaaFISCheck[CHECK_AMOUNT] = [];
+    
+    for (var i = 0; i < (CHECK_AMOUNT + 1); i++)
+    {
+        gaaFISCheck[i] = [];
+    }
     
     for (var i = 0; i < FIS_CHECK_END_BASE; i++)
     {
@@ -95,6 +93,9 @@ function initCheckList()
         gaaFISCheck[CHECK_PASS_CNT][i] = 0;
         gaaFISCheck[CHECK_RESULT][i] = true;
         gaaFISCheck[CHECK_DETAIL][i] = "NONE";
+        gaaFISCheck[CHECK_FAIL_TRACE][i] = "";
+        gaaFISCheck[CHECK_PASS_TRACE][i] = "";
+        gaaFISCheck[CHECK_TOTAL_TRACE][i] = "";
     }
     
     gaaFISCheck[CHECK_TEXT][CHECK_D2H_FIS_IDX_0] = "Device 收到 COMRESET 之後 , 都有在 100ms 內回應 D2H FIS";
@@ -122,22 +123,23 @@ function initCheckList()
     gaaFISCheck[CHECK_AMOUNT][CHECK_LOGO_IDX_0] = 6;
     
     // PS: 對於Read Data FIS , 檢查不出長度正常但被Host 回 R_ERR的case
-    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_0] = "如果 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)";
-    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_1] = "如果 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_0] = "如果 Read Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)"; // could be terminated by HAMT or SYNC escape
+    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_1] = "如果 Write Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)"; // could be terminated by HAMT or SYNC escape
     gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_2] = "如果 Data FIS 被 PA 檢查出 Frame Length Error (Protocl Error=8) , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)";
     gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_3] = "如果 Data FIS 被 PA 檢查出 CRC Error (Protocl Error=10) , 那 Device 需回應帶 Error 的 SDB FIS (SACTIVE=0 , ERROR=0x84)";
     gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_4] = "如果 Cmd FIS 被 PA 檢查出 Error , 那 Device 不須回應 D2H/SDB FIS";
     gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_5] = "如果 Cmd FIS 的 C-bit=0 , 那 Device 不須回應 D2H/SDB FIS";
     gaaFISCheck[CHECK_AMOUNT][CHECK_NCQ_ERR_HANDLE_IDX_0] = 6;
     
-    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0] = "如果 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 D2H FIS (STATUS=0x51 , ERROR=0x84)";
-    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_1] = "如果 Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 D2H FIS (STATUS=0x51 , ERROR=0x84)";
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0] = "如果 Read Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 D2H FIS (STATUS=0x51 , ERROR=0x84)"; // could be terminated by HAMT or SYNC escape
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_1] = "如果 Write Data FIS 長度錯誤 , 那 Device 需回應帶 Error 的 D2H FIS (STATUS=0x51 , ERROR=0x84)"; // could be terminated by HAMT or SYNC escape
     gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_2] = "如果 Data FIS 被 PA 檢查出 Frame Length Error (Protocl Error=8) , 那 Device 需回應帶 Error 的 D2H FIS (SACTIVE=0 , ERROR=0x84)";
-    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_3] = "如果 Data FIS 被 PA 檢查出 CRC Error (Protocl Error=10) , 那 Device 需回應帶 Error 的 D2H FIS (SACTIVE=0 , ERROR=0x84)";
-    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_4] = "如果 Cmd FIS 被 PA 檢查出 Error , 那 Device 不須回應 D2H FIS";
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_3] = "如果 Data FIS 被 PA 檢查出 CRC Error (Protocl Error=10) , 那 Device 需回應帶 Error 的 D2H FIS (SACTIVE=0 , ERROR=0x84) ??"; // terminated by SYNC or DMAT
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_4] = "如果 Cmd FIS 被 PA 檢查出錯誤 (Protocol Error != 0), 那 Device 不須回應 D2H FIS";
     gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_5] = "如果 Cmd FIS 的 C-bit=0 , 那 Device 不須回應 D2H FIS";
     //gaaFISCheck[CHECK_TEXT][CHECK_ERR_HANDLE_IDX_8] = "如果 Non-NCQ/NCQ cmd 被 PA 檢查出 Delimiter Error (Protocl Error=13) , 那 Device 不須回應 D2H/SDB FIS ??";
-    gaaFISCheck[CHECK_AMOUNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0] = 6;
+    gaaFISCheck[CHECK_TEXT][CHECK_NON_NCQ_ERR_HANDLE_IDX_6] = "如果收到 FIS type 錯誤的 FIS (Protocol Error=7) , 那 Device 不須回應 D2H FIS";
+    gaaFISCheck[CHECK_AMOUNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0] = 7;
     
     gaaFISCheck[CHECK_TEXT][CHECK_OTHER_IDX_0] = "Device 啟用 Auto Activate 之後 , 第一個 DMA Setup FIS 之後卻有出現 DMA Activate FIS";
     gaaFISCheck[CHECK_TEXT][CHECK_OTHER_IDX_1] = "Read/Write Multiple cmd 的 Data FIS 長度都有依照之前 Set Multiple 的規範";
@@ -236,8 +238,8 @@ function parseText()
 
     if (!gbParseError || gbSkipParseError)
     {
-        checkVerification();
-        detectRule();
+        //checkVerification();
+        //detectRule();
         doStatistics();
     }
     

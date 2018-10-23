@@ -708,6 +708,7 @@ function isH2DFIS(i)
 }
 
 
+
 function isReadWriteMultiple(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)
@@ -1747,10 +1748,11 @@ function addErrorCSV(i, sType, sResult, sDescription)
 
 // about check csv
 
-function addCheckCSV(sNo, sType, sItem, bResult, iTotalCnt, iPassCnt, sDetail)
+function addCheckCSV(sNo, sType, sItem, bResult, iTotalCnt, iPassCnt, sDetail, sFailTrace, sPassTrace, sTotalTrace)
 {
+    //sTrace = sTrace.replace(/_/g, ",");
     gsCheckCSV += sNo + "," + formatTextInCSV(sType) + "," + formatTextInCSV(sItem) + "," + 
-                  (bResult ? "PASS" : "FAIL") + "," + iTotalCnt + "," + iPassCnt + "," + formatTextInCSV(sDetail) + "\n";
+                  (bResult ? "PASS" : "FAIL") + "," + iTotalCnt + "," + iPassCnt + "," + formatTextInCSV(sDetail) + "," +  sFailTrace + "," + sPassTrace + "," + sTotalTrace + "\n";
     
     giCheckCSVIdx++;
 }
@@ -1775,7 +1777,9 @@ function buildCheckCSV()
             addCheckCSV(sNo, sType, 
                 gaaFISCheck[CHECK_TEXT][iBase + i], bPass, 
                 gaaFISCheck[CHECK_TOTAL_CNT][iBase + i], gaaFISCheck[CHECK_PASS_CNT][iBase + i],
-                gaaFISCheck[CHECK_DETAIL][iBase + i]);
+                gaaFISCheck[CHECK_DETAIL][iBase + i], 
+                gaaFISCheck[CHECK_FAIL_TRACE][iBase + i], gaaFISCheck[CHECK_PASS_TRACE][iBase + i],
+                gaaFISCheck[CHECK_TOTAL_TRACE][iBase + i]);
         }
     }
 }
