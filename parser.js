@@ -567,6 +567,20 @@ function setDrawError(iPAIdx, sMessage)
     addErrorCSV(iPAIdx, S_TYPE_STAT, sMessage, "");
 }
 
+function setCheckInfo(iTraceType, iCheckIdx, iPAIdx)
+{
+    gaaFISCheck[iTraceType][iCheckIdx] += getClaim(iPAIdx) + "_";
+ 
+    if (iTraceType == CHECK_TOTAL_TRACE)
+    {
+        gaaFISCheck[CHECK_TOTAL_CNT][iCheckIdx]++;
+    }
+    else if (iTraceType == CHECK_PASS_TRACE)
+    {
+        gaaFISCheck[CHECK_PASS_CNT][iCheckIdx]++;
+    }
+}
+
 function buildCSV()
 {
     log("build CSV");
@@ -600,6 +614,13 @@ function buildCSV()
     var iTotalBytes = 0;
     var iExpectBytes = 0;
     
+    var iPartialIdx = 0;
+    var iSlumberIdx = 0;
+    
+    var iSDBFISIdx = 0;
+    var iD2HFISIdx = 0;
+    var iHostComwakeIdx = 0;
+    
     var sCheckClaim = "";
     
     for (var i = 0; i < 32; i++)
@@ -624,12 +645,9 @@ function buildCSV()
             if (isComreset(i))
             {
                 iCRSTIdx = i;
-                
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_D2H_FIS_IDX_0]++;
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_0]++;
-                
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_D2H_FIS_IDX_0] += sCheckClaim;
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_LOGO_IDX_0] += sCheckClaim;
+
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_D2H_FIS_IDX_0, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_0, i);
                 
                 if (isDeviceOOB(i+1) && isCominit(i+1))
                 {
@@ -640,12 +658,11 @@ function buildCSV()
                     
                     if (iTempDuration < (10 * 1000))
                     {
-                        gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_0]++;
-                        gaaFISCheck[CHECK_PASS_TRACE][CHECK_LOGO_IDX_0] += sCheckClaim;
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_0, iCRSTIdx);
                     }
                     else
                     {
-                        gaaFISCheck[CHECK_FAIL_TRACE][CHECK_LOGO_IDX_0] += sCheckClaim;
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_0, iCRSTIdx);
                     }
                 }
                 else if ((i+1) < giPAIndex)
@@ -685,6 +702,8 @@ function buildCSV()
             }
             else if (isComwake(i))
             {
+                iHostComwakeIdx = i;
+                
                 if (isDeviceOOB(i+1) && isComwake(i+1))
                 {
                     iTempDuration = getDurationUS(i, i+1);
@@ -699,24 +718,22 @@ function buildCSV()
                         {
                             if (iTempDuration < 10)
                             {
-                                gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_1]++;
-                                gaaFISCheck[CHECK_PASS_TRACE][CHECK_LOGO_IDX_1] += sCheckClaim;
+                                setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_1, iHostComwakeIdx);
                             }
                             else
                             {
-                                gaaFISCheck[CHECK_FAIL_TRACE][CHECK_LOGO_IDX_1] += sCheckClaim;
+                                setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_1, iHostComwakeIdx);
                             }
                         }
                         else if (bSlumber)
                         {
                             if (iTempDuration < (10 * 1000))
                             {
-                                gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_2]++;
-                                gaaFISCheck[CHECK_PASS_TRACE][CHECK_LOGO_IDX_2] += sCheckClaim;
+                                setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_2, iHostComwakeIdx);
                             }
                             else
                             {
-                                gaaFISCheck[CHECK_FAIL_TRACE][CHECK_LOGO_IDX_2] += sCheckClaim;
+                                setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_2, iHostComwakeIdx);
                             }
                         }
                         
@@ -756,15 +773,14 @@ function buildCSV()
             
             if (isPartial(i))
             {
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LPM_IDX_0]++;
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_1]++;
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_3]++;
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_4]++;
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_0, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_1, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_3, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_4, i);
                 
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_LPM_IDX_0] += sCheckClaim;
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_LOGO_IDX_1] += sCheckClaim;
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_LOGO_IDX_3] += sCheckClaim;
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_LOGO_IDX_4] += sCheckClaim;
+                var bTempFail = true;
+                
+                iPartialIdx = i;
                 
                 if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
                 {
@@ -776,22 +792,18 @@ function buildCSV()
                     
                     if (iTempDuration < 100)
                     {
-                        gaaFISCheck[CHECK_PASS_CNT][CHECK_LPM_IDX_0]++;
-                        gaaFISCheck[CHECK_PASS_TRACE][CHECK_LPM_IDX_0] += sCheckClaim;
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_0, iPartialIdx);
                     }
                     else
                     {
-                        gaaFISCheck[CHECK_FAIL_TRACE][CHECK_LPM_IDX_0] += sCheckClaim;
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_0, iPartialIdx);
                     }
-                    
-                    var bTempFail = true;
-                    
+
                     if (isPMACK(i+1))
                     {
                         if (getPrimitiveCnt(i+1) >= 4)
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_4]++;
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_LOGO_IDX_4] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_4, iPartialIdx);
                             bTempFail = false;
                         }
                     }
@@ -800,15 +812,9 @@ function buildCSV()
                         // cannot see SYNC...
                         if (isHostFIS(i+2) || isHostOOB(i+2) || isHostPrimitive(i+2))
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_4]++;
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_LOGO_IDX_4] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_4, iPartialIdx);
                             bTempFail = false;
                         }
-                    }
-                    
-                    if (bTempFail)
-                    {
-                        gaaFISCheck[CHECK_FAIL_TRACE][CHECK_LOGO_IDX_4] += sCheckClaim;
                     }
                 }
                 else if ((i+1) < giPAIndex)
@@ -822,20 +828,25 @@ function buildCSV()
                         setDrawError(i+1, "Host 打 Partial 之後過了 " + gbPartialResponseThreshold + "ns , Device 並沒有接著回 ACK/NAK");
                     }
                 }
+              
+                if (bTempFail)
+                {
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_4, iPartialIdx);
+                }
+                
                 bPartial = true;
                 bSlumber = false;
             }
             else if (isSlumber(i))
             {
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LPM_IDX_1]++;
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_2]++;
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_3]++;
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_LOGO_IDX_5]++;
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_1, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_2, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_3, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_5, i);
                 
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_LPM_IDX_1] += sCheckClaim;
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_LOGO_IDX_2] += sCheckClaim;
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_LOGO_IDX_3] += sCheckClaim;
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_LOGO_IDX_5] += sCheckClaim;
+                iSlumberIdx = i;
+                
+                var bTempFail = true;
                 
                 if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
                 {
@@ -845,22 +856,18 @@ function buildCSV()
                     
                     if (iTempDuration < 100)
                     {
-                        gaaFISCheck[CHECK_PASS_CNT][CHECK_LPM_IDX_1]++;
-                        gaaFISCheck[CHECK_PASS_TRACE][CHECK_LPM_IDX_1] += sCheckClaim;
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_1, iSlumberIdx);
                     }
                     else
                     {
-                        gaaFISCheck[CHECK_PASS_TRACE][CHECK_LPM_IDX_1] += sCheckClaim;
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_1, iSlumberIdx);
                     }
-                    
-                    var bTempFail = true;
-                    
+
                     if (isPMACK(i+1))
                     {
                         if (getPrimitiveCnt(i+1) >= 4)
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_5]++;
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_LOGO_IDX_5] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_5, iSlumberIdx);
                             bTempFail = false;
                         }
                     }
@@ -869,15 +876,9 @@ function buildCSV()
                         // cannot see SYNC...
                         if (isHostFIS(i+2) || isHostOOB(i+2) || isHostPrimitive(i+2))
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_LOGO_IDX_5]++;
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_LOGO_IDX_5] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_5, iSlumberIdx);
                             bTempFail = false;
                         }
-                    }
-                    
-                    if (bTempFail)
-                    {
-                        gaaFISCheck[CHECK_FAIL_TRACE][CHECK_LOGO_IDX_5] += sCheckClaim;
                     }
                 }
                 else if ((i+1) < giPAIndex)
@@ -891,6 +892,12 @@ function buildCSV()
                         setDrawError(i+1, "Host 打 Slumber 之後過了 " + gbSlumberResponseThreshold + "ns , Device 並沒有接著回 ACK/NAK");
                     }
                 }
+
+                if (bTempFail)
+                {
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_5, iSlumberIdx);
+                }
+                    
                 bPartial = false;
                 bSlumber = true;
             }
@@ -958,17 +965,15 @@ function buildCSV()
             
             if (isCBit0(i))
             {
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_5]++;
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_5] += sCheckClaim;
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_5, i);
                 
                 if (!isD2HFIS(i+1))
                 {
-                    gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_5]++;
-                    gaaFISCheck[CHECK_PASS_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_5] += sCheckClaim;
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_5, i);
                 }
                 else
                 {
-                    gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_5] += sCheckClaim;
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_5, i);
                 }
             }
             
@@ -977,6 +982,8 @@ function buildCSV()
         else if (isSDBFIS(i))
         {
             var sSActiveBin = getSActiveBin(i);
+            
+            iSDBFISIdx = i;
             
             log(getClaim(i) + " SACTIVE:" + sSActiveBin + "(" + getSActiveHex(i) + ")");
 
@@ -1015,24 +1022,22 @@ function buildCSV()
                 {
                     if (isErrorResponse(i))
                     {
-                        gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_2]++;
-                        gaaFISCheck[CHECK_PASS_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_2] += sCheckClaim;
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_2, iSDBFISIdx);
                     }
                     else
                     {
-                        gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_2] += sCheckClaim;
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_2, iSDBFISIdx);
                     }
                 }
                 else if (iProtocolError == I_CRC_ERR)
                 {
                     if (isErrorResponse(i))
                     {
-                        gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_3]++;
-                        gaaFISCheck[CHECK_PASS_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_3] += sCheckClaim;
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_3, iSDBFISIdx);
                     }
                     else
                     {
-                        gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_3] += sCheckClaim;
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_3, iSDBFISIdx);
                     }
                 }
                 
@@ -1045,24 +1050,22 @@ function buildCSV()
                 {
                     if (isErrorResponse(i))
                     {
-                        gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_1]++;
-                        gaaFISCheck[CHECK_PASS_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_1] += sCheckClaim;
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_1, iSDBFISIdx);
                     }
                     else
                     {
-                        gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_1] += sCheckClaim;
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_1, iSDBFISIdx);
                     }
                 }
                 else
                 {
                     if (isErrorResponse(i))
                     {
-                        gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_0]++;
-                        gaaFISCheck[CHECK_PASS_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_0] += sCheckClaim;
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_0, iSDBFISIdx);
                     }
                     else
                     {
-                        gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_0] += sCheckClaim;
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_0, iSDBFISIdx);
                     }
                 }
                     
@@ -1144,19 +1147,17 @@ function buildCSV()
             {
                 setDrawError(i, " is illegal cause C bit is 0");
                 
-                gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_5]++;
-                gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_5] += sCheckClaim;
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_5, i);
                 
                 //err("sCheckClaim:" + gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_5]);
                 
                 if (!isD2HFIS(i+1))
                 {
-                    gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_5]++;
-                    gaaFISCheck[CHECK_PASS_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_5] += sCheckClaim;
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_5, i);
                 }
                 else
                 {
-                    gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_5] += sCheckClaim;
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_5, i);
                 }
             }
             else
@@ -1195,32 +1196,30 @@ function buildCSV()
                 {
                     if (bWrite)
                     {
-                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_1]++;
-                        gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_1] += sCheckClaim;
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_1, iDataFISIdx);
                     }
                     else 
                     {
-                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_0]++;
-                        gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_0] += sCheckClaim;
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_0, iDataFISIdx);
                     }
                 }
                 else
                 {
                     if (bWrite)
                     {
-                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_1]++;
-                        gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_1] += sCheckClaim;
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_1, iDataFISIdx);
                     }
                     else 
                     {
-                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0]++;
-                        gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_0] += sCheckClaim;
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_0, iDataFISIdx);
                     }
                 }
             }
         }
         else if (isD2HFIS(i))
         {
+            iD2HFISIdx = i;
+            
             if (bNonNCQ)
             {
                 //log("CMD:" + getClaim(iNonNCQIdx) + " -> " + getClaim(i));
@@ -1235,24 +1234,22 @@ function buildCSV()
                     {
                         if (isErrorResponse(i))
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_2]++;
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_2] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_2, iD2HFISIdx);
                         }
                         else
                         {
-                            gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_2] += sCheckClaim;
+                            setCheckInfo(CHECK_FAIL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_2, iD2HFISIdx);
                         }
                     }
                     else if (iProtocolError == I_CRC_ERR)
                     {
                         if (isErrorResponse(i))
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_3]++;
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_3] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_3, iD2HFISIdx);
                         }
                         else
                         {
-                            gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_3] += sCheckClaim;
+                            setCheckInfo(CHECK_FAIL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_3, iD2HFISIdx);
                         }
                     }
 
@@ -1265,23 +1262,21 @@ function buildCSV()
                     {
                         if (isErrorResponse(i))
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_1]++;
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_1] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_1, iD2HFISIdx);
                         }
                         else{
-                            gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_1] += sCheckClaim;
+                            setCheckInfo(CHECK_FAIL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_1, iD2HFISIdx);
                         }
                     }
                     else
                     {
                         if (isErrorResponse(i))
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_0]++;
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_0] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_0, iD2HFISIdx);
                         }
                         else
                         {
-                            gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_0] += sCheckClaim;
+                            setCheckInfo(CHECK_FAIL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_0, iD2HFISIdx);
                         }
                     }
                     bDataLengthErr = 0; // init for next parse
@@ -1302,12 +1297,11 @@ function buildCSV()
                 
                 if (iTempDuration < (100 * 1000))
                 {
-                    gaaFISCheck[CHECK_PASS_CNT][CHECK_D2H_FIS_IDX_0]++;
-                    gaaFISCheck[CHECK_PASS_TRACE][CHECK_D2H_FIS_IDX_0] += sCheckClaim;
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_D2H_FIS_IDX_0, iCRSTIdx);
                 }
                 else
                 {
-                    gaaFISCheck[CHECK_FAIL_TRACE][CHECK_D2H_FIS_IDX_0] += sCheckClaim;
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_D2H_FIS_IDX_0, iCRSTIdx);
                 }
             }
             else if (bNCQ)
@@ -1330,17 +1324,15 @@ function buildCSV()
                 
                 if (iProtocolError == I_FRAME_TYPE_ERR)
                 {
-                    gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_6]++;
-                    gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_6] += sCheckClaim;
+                    setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_6, iProtocolErrorIdx);
 
                     if (!isDeviceFIS(i+1))
                     {
-                        gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_6]++;
-                        gaaFISCheck[CHECK_PASS_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_6] += sCheckClaim;
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_6, iProtocolErrorIdx);
                     }
                     else
                     {
-                        gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_6] += sCheckClaim;
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_6, iProtocolErrorIdx);
                     }
                 }
                 else if (isCmdFIS(i))
@@ -1349,32 +1341,28 @@ function buildCSV()
                     
                     if (bNCQ)
                     {
-                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_4]++;
-                        gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_4] += sCheckClaim;
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_4, iProtocolErrorIdx);
                         
                         if (pass)
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NCQ_ERR_HANDLE_IDX_4]++;
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_4] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_4, iProtocolErrorIdx);
                         }
                         else
                         {
-                            gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_4] += sCheckClaim;
+                            setCheckInfo(CHECK_FAIL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_4, iProtocolErrorIdx);
                         }
                     }
                     else if (bNonNCQ)
                     {
-                        gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_4]++;
-                        gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_4] += sCheckClaim;
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_4, iProtocolErrorIdx);
                         
                         if (pass)
                         {
-                            gaaFISCheck[CHECK_PASS_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_4]++;   
-                            gaaFISCheck[CHECK_PASS_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_4] += sCheckClaim;
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_4, iProtocolErrorIdx);
                         }
                         else
                         {
-                            gaaFISCheck[CHECK_FAIL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_4] += sCheckClaim;
+                            setCheckInfo(CHECK_FAIL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_4, iProtocolErrorIdx);
                         }
                     }
                 }
@@ -1384,26 +1372,22 @@ function buildCSV()
                     {
                         if (bNCQ)
                         {
-                            gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_2]++;
-                            gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_2] += sCheckClaim;
+                            setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_2, iProtocolErrorIdx);
                         }
                         else if (bNonNCQ)
                         {
-                            gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_2]++;
-                            gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_2] += sCheckClaim;
+                            setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_2, iProtocolErrorIdx);
                         }
                     }
                     else if (iProtocolError == I_CRC_ERR)
                     {
                         if (bNCQ)
                         {
-                            gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NCQ_ERR_HANDLE_IDX_3]++;
-                            gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NCQ_ERR_HANDLE_IDX_3] += sCheckClaim;
+                            setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_3, iProtocolErrorIdx);
                         }
                         else if (bNonNCQ)
                         {
-                            gaaFISCheck[CHECK_TOTAL_CNT][CHECK_NON_NCQ_ERR_HANDLE_IDX_3]++;
-                            gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_3] += sCheckClaim;
+                            setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_3, iProtocolErrorIdx);
                         }
                     }
                 }
