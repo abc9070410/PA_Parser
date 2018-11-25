@@ -647,7 +647,7 @@ function buildCSV()
                 iCRSTIdx = i;
 
                 setCheckInfo(CHECK_TOTAL_TRACE, CHECK_D2H_FIS_IDX_0, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_0, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_OOB_IDX_0, i);
                 
                 if (isDeviceOOB(i+1) && isCominit(i+1))
                 {
@@ -658,11 +658,11 @@ function buildCSV()
                     
                     if (iTempDuration < (10 * 1000))
                     {
-                        setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_0, iCRSTIdx);
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_OOB_IDX_0, iCRSTIdx);
                     }
                     else
                     {
-                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_0, iCRSTIdx);
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_OOB_IDX_0, iCRSTIdx);
                     }
                 }
                 else if ((i+1) < giPAIndex)
@@ -718,22 +718,22 @@ function buildCSV()
                         {
                             if (iTempDuration < 10)
                             {
-                                setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_1, iHostComwakeIdx);
+                                setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_4, iHostComwakeIdx);
                             }
                             else
                             {
-                                setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_1, iHostComwakeIdx);
+                                setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_4, iHostComwakeIdx);
                             }
                         }
                         else if (bSlumber)
                         {
                             if (iTempDuration < (10 * 1000))
                             {
-                                setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_2, iHostComwakeIdx);
+                                setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_5, iHostComwakeIdx);
                             }
                             else
                             {
-                                setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_2, iHostComwakeIdx);
+                                setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_5, iHostComwakeIdx);
                             }
                         }
                         
@@ -760,6 +760,8 @@ function buildCSV()
             bPartial = false;
             bSlumber = false;
             bCominit = true;
+            
+            // TODO: CHECK_OOB_IDX_1
         }
         else if (isHostPrimitive(i))
         {
@@ -774,9 +776,9 @@ function buildCSV()
             if (isPartial(i))
             {
                 setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_0, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_1, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_3, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_4, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_4, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_6, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_7, i);
                 
                 var bTempFail = true;
                 
@@ -803,7 +805,7 @@ function buildCSV()
                     {
                         if (getPrimitiveCnt(i+1) >= 4)
                         {
-                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_4, iPartialIdx);
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_7, iPartialIdx);
                             bTempFail = false;
                         }
                     }
@@ -812,7 +814,7 @@ function buildCSV()
                         // cannot see SYNC...
                         if (isHostFIS(i+2) || isHostOOB(i+2) || isHostPrimitive(i+2))
                         {
-                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_4, iPartialIdx);
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_7, iPartialIdx);
                             bTempFail = false;
                         }
                     }
@@ -831,7 +833,7 @@ function buildCSV()
               
                 if (bTempFail)
                 {
-                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_4, iPartialIdx);
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_7, iPartialIdx);
                 }
                 
                 bPartial = true;
@@ -840,9 +842,9 @@ function buildCSV()
             else if (isSlumber(i))
             {
                 setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_1, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_2, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_3, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LOGO_IDX_5, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_5, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_6, i);
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_8, i);
                 
                 iSlumberIdx = i;
                 
@@ -867,7 +869,7 @@ function buildCSV()
                     {
                         if (getPrimitiveCnt(i+1) >= 4)
                         {
-                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_5, iSlumberIdx);
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_8, iSlumberIdx);
                             bTempFail = false;
                         }
                     }
@@ -876,7 +878,7 @@ function buildCSV()
                         // cannot see SYNC...
                         if (isHostFIS(i+2) || isHostOOB(i+2) || isHostPrimitive(i+2))
                         {
-                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LOGO_IDX_5, iSlumberIdx);
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_8, iSlumberIdx);
                             bTempFail = false;
                         }
                     }
@@ -895,7 +897,7 @@ function buildCSV()
 
                 if (bTempFail)
                 {
-                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LOGO_IDX_5, iSlumberIdx);
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_8, iSlumberIdx);
                 }
                     
                 bPartial = false;
