@@ -111,27 +111,31 @@ function getStartMS(i)
     return iNS / 1000000;
 }
 
-function getEndTime(i)
+// unit: ns
+// ex. Duration Time: 0.000060 -> return 60
+function getDurationTime(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE)
     {
-        return getNumber(formatPATime(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_START]), 10) + 
-               getNumber(formatPATime(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_DURATION]), 10);
+        return getNumber(formatPATime(gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_AMOUNT + IDX_INFO_DURATION]), 10);
     }
     else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_FIS)
     {
-        return getNumber(formatPATime(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_START]), 10) + 
-               getNumber(formatPATime(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_DURATION]), 10);
+        return getNumber(formatPATime(gaasFISSeq[gaasPASeq[i][IDX_PA_NO]][IDX_FIS_AMOUNT + IDX_INFO_DURATION]), 10);
     }
     else if (gaasPASeq[i][IDX_PA_TYPE] == TYPE_OOB)
     {
-        return getNumber(formatPATime(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_START]), 10) + 
-               getNumber(formatPATime(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_DURATION]), 10);
+        return getNumber(formatPATime(gaasOOBSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OOB_AMOUNT + IDX_INFO_DURATION]), 10);
     }
     else
     {
         return 0;
     }
+}
+
+function getEndTime(i)
+{
+    return getStartTime(i) + getDurationTime(i);
 }
 
 // time unit: us
@@ -1002,6 +1006,34 @@ function isDevicePrimitive(i)
              gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_SENDER].indexOf("Target") >= 0);
 }
 
+function getPrimitiveGen(i)
+{
+    if (isPrimitive(i))
+    {
+         var iCnt = getPrimitiveCnt(i);
+         var iDurationNS = getDurationTime(i);
+         
+         var iSingleNS = iDurationNS / iCnt;
+         
+         //log(getClaim(i) + " SingleNS:" + iSingleNS);
+         
+         if (iSingleNS > 25) // about 26ns
+         {
+            return 1;
+         }
+         else if (iSingleNS > 12) // about 13ns
+         {
+             return 2;
+         }
+         else if (iSingleNS > 5) // about 6ns
+         {
+             return 3;
+         }
+    }
+    
+    return 0; // cannot find the primitive's GEN speed
+}
+
 function getPrimitiveType(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_PRIMITIVE)
@@ -1022,7 +1054,7 @@ function getPrimitiveCnt(i)
     
     if (iStart < 0 || iEnd < iStart)
     {
-        return "NULL";
+        return 1;
     }
     
     var sNum = sTemp.substring(iStart + 2, iEnd);
@@ -1066,6 +1098,14 @@ function isPMREQ(i)
             gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
             gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("PMREQ_") >= 0;
 }
+
+function isD10_2(i)
+{
+    return isLegalPAIdx(i) && 
+            gaasPASeq[i][IDX_PA_TYPE] == TYPE_PRIMITIVE &&
+            gaasPrimitiveSeq[gaasPASeq[i][IDX_PA_NO]][IDX_PRIMITIVE_TYPE].indexOf("D10") >= 0;
+}
+
 
 function getOOBType(i)
 {

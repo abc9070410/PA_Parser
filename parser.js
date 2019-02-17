@@ -220,7 +220,7 @@ function parsePrimitive(asLineToken, iTextLineIdx)
             
             log("match " + TAG_PRIMITIVE[IDX_PRIMITIVE_SENDER][0] + " : " + TAG_PRIMITIVE[IDX_PRIMITIVE_SENDER][1] + "," + gaasPrimitiveSeq[giPrimitiveIndex][IDX_PRIMITIVE_SENDER]);
         }
-        else if (asLineToken[j].indexOf(TAG_PRIMITIVE[IDX_PRIMITIVE_TYPE][0]) == 0)
+        else if (asLineToken[j].indexOf(TAG_PRIMITIVE[IDX_PRIMITIVE_TYPE][0]) >= 0)
         {
             gaasPrimitiveSeq[giPrimitiveIndex][IDX_PRIMITIVE_TYPE] = asLineToken[j];
             
@@ -622,6 +622,10 @@ function buildCSV()
     var iHostComwakeIdx = 0;
     
     var sCheckClaim = "";
+
+    var iHostPrimitiveGen = 0;
+    var iPrevPartialGen = 0;
+    var iPrevSlumberGen = 0;
     
     for (var i = 0; i < 32; i++)
     {
@@ -645,6 +649,9 @@ function buildCSV()
             if (isComreset(i))
             {
                 iCRSTIdx = i;
+                
+                iPrevPartialGen = 0; // init
+                iPrevSlumberGen = 0; // init
 
                 setCheckInfo(CHECK_TOTAL_TRACE, CHECK_D2H_FIS_IDX_0, i);
                 setCheckInfo(CHECK_TOTAL_TRACE, CHECK_OOB_IDX_0, i);
@@ -704,6 +711,15 @@ function buildCSV()
             {
                 iHostComwakeIdx = i;
                 
+                if (bPartial)
+                {
+                    setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_4, i);
+                }
+                else if (bSlumber)
+                {
+                    setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_5, i);
+                }
+                
                 if (isDeviceOOB(i+1) && isComwake(i+1))
                 {
                     iTempDuration = getDurationUS(i, i+1);
@@ -761,10 +777,47 @@ function buildCSV()
             bSlumber = false;
             bCominit = true;
             
+            iPrevPartialGen = 0; // init
+            iPrevSlumberGen = 0; // init
+            
             // TODO: CHECK_OOB_IDX_1
+            if (i >= 0 && isCominit(i-1))
+            {
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_OOB_IDX_1, i);
+                
+                if (getDurationUS(i-1, i) < (10 * 1000))
+                {
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_OOB_IDX_1, i);
+                }
+                else
+                {
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_OOB_IDX_1, i);   
+                }
+            }
         }
         else if (isHostPrimitive(i))
         {
+            iHostPrimitiveGen = getPrimitiveGen(i);
+            
+            var iPrevGen = iPrevPartialGen > 0 ? iPrevPartialGen : iPrevSlumberGen;
+                    
+            if (iPrevGen > 0 && isPMREQ(i))
+            {
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_6, i);
+                
+                if (iPrevGen == iHostPrimitiveGen)
+                {
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_6, i);
+                }
+                else
+                {
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_6, i);
+                }
+                
+                iPrevPartialGen = 0;
+                iPrevSlumberGen = 0;
+            }
+            
             if (bPIORead) // ex. IDFY -> Partial/Slumber
             {
                 addDrawCSV(IDX_CSV_CMD_DURATION, iNonNCQIdx, getDurationUS(iNonNCQIdx, iDataFISIdx));
@@ -775,12 +828,25 @@ function buildCSV()
             
             if (isPartial(i))
             {
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_0, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_4, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_6, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_7, i);
+                var bContinueHostPartial = isHostPrimitive(i+1) && isPartial(i+1);
                 
-                var bTempFail = true;
+                var bTempFail = false;
+                var bValidPartial = false;
+                var bResponseInTime = false;
+
+                if (bContinueHostPartial == false)
+                {
+                    iPrevPartialGen = getPrimitiveGen(i);
+
+                    // Device would response PMACK/PMNAK for >=2 PM_REQ
+                    if (getPrimitiveCnt(i) > 1)
+                    {
+                        bTempFail = true;
+                        bValidPartial = true;
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_7, i);
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_0, i);
+                    }
+                }
                 
                 iPartialIdx = i;
                 
@@ -794,19 +860,21 @@ function buildCSV()
                     
                     if (iTempDuration < 100)
                     {
-                        setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_0, iPartialIdx);
-                    }
-                    else
-                    {
-                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_0, iPartialIdx);
+                        bResponseInTime = true;
                     }
 
                     if (isPMACK(i+1))
                     {
                         if (getPrimitiveCnt(i+1) >= 4)
                         {
-                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_7, iPartialIdx);
                             bTempFail = false;
+                        }
+                        else if (isPMACK(i+2))
+                        {
+                            if (getPrimitiveCnt(i+2) >= 4)
+                            {
+                                bTempFail = false;
+                            }
                         }
                     }
                     else if (isPMNAK(i+1))
@@ -814,26 +882,62 @@ function buildCSV()
                         // cannot see SYNC...
                         if (isHostFIS(i+2) || isHostOOB(i+2) || isHostPrimitive(i+2))
                         {
-                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_7, iPartialIdx);
                             bTempFail = false;
                         }
                     }
                 }
-                else if ((i+1) < giPAIndex)
+                else 
                 {
-                    if (isPartial(i+1) && (getDuration(i, i+1) < gbPartialResponseThreshold))
+                    if (isPMACK(i-1) || isPMNAK(i-1))
                     {
-                        // allow Device responses ACK/NAK whthin gbPartialResponseThreshold (ns)
+                        var iRequestStartTime = getStartTime(i);
+                        var iResponseEndTime = getEndTime(i-1);
+                        
+                        log("BBB:" +getClaim(i) + ":" + iResponseEndTime + ":" + iRequestStartTime);
+                        
+                        // ex. Order Primitive  StartTime  EndTime
+                        //         1    PM_REQ          0       10
+                        //         2     PMACK         15       40
+                        //         3    PM_REQ         30       40 
+                        if (iResponseEndTime >= iRequestStartTime)
+                        {
+                            bTempFail = false;
+                            bResponseInTime = true;
+                        }
                     }
-                    else
+                    
+                    if ((i+1) < giPAIndex)
                     {
-                        setDrawError(i+1, "Host 打 Partial 之後過了 " + gbPartialResponseThreshold + "ns , Device 並沒有接著回 ACK/NAK");
+                        if (isPartial(i+1) && (getDuration(i, i+1) < gbPartialResponseThreshold))
+                        {
+                            // allow Device responses ACK/NAK whthin gbPartialResponseThreshold (ns)
+                        }
+                        else
+                        {
+                            setDrawError(i+1, "Host 打 Partial 之後過了 " + gbPartialResponseThreshold + "ns , Device 並沒有接著回 ACK/NAK");
+                        }
                     }
                 }
               
-                if (bTempFail)
+                if (bValidPartial)
                 {
-                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_7, iPartialIdx);
+                    if (bTempFail)
+                    {
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_7, iPartialIdx);
+                    }
+                    else
+                    {
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_7, iPartialIdx);
+                    }
+                    
+                    if (bResponseInTime)
+                    {
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_0, iPartialIdx);
+                    }
+                    else
+                    {
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_0, iPartialIdx);
+                    }
                 }
                 
                 bPartial = true;
@@ -841,14 +945,27 @@ function buildCSV()
             }
             else if (isSlumber(i))
             {
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_1, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_5, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_6, i);
-                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_8, i);
+                var bContinueHostSlumber = isHostPrimitive(i+1) && isSlumber(i+1);
                 
+                var bTempFail = false;
+                var bValidSlumber = false;
+
+                if (bContinueHostSlumber == false)
+                {
+                    setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_1, i);
+
+                    iPrevSlumberGen = iHostPrimitiveGen; 
+                    
+                    // Device would response PMACK/PMNAK for >=2 PM_REQ
+                    if (getPrimitiveCnt(i) > 1)
+                    {
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_8, i);
+                        bTempFail = true;
+                        bValidSlumber = true;
+                    }
+                }
+
                 iSlumberIdx = i;
-                
-                var bTempFail = true;
                 
                 if (isDevicePrimitive(i+1) && (isPMACK(i+1) || isPMNAK(i+1)))
                 {
@@ -869,8 +986,14 @@ function buildCSV()
                     {
                         if (getPrimitiveCnt(i+1) >= 4)
                         {
-                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_8, iSlumberIdx);
                             bTempFail = false;
+                        }
+                        else if (isPMACK(i+2))
+                        {
+                            if (getPrimitiveCnt(i+2) >= 4)
+                            {
+                                bTempFail = false;
+                            }
                         }
                     }
                     else if (isPMNAK(i+1))
@@ -878,26 +1001,54 @@ function buildCSV()
                         // cannot see SYNC...
                         if (isHostFIS(i+2) || isHostOOB(i+2) || isHostPrimitive(i+2))
                         {
-                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_8, iSlumberIdx);
                             bTempFail = false;
                         }
                     }
                 }
-                else if ((i+1) < giPAIndex)
+                else 
                 {
-                    if (isSlumber(i+1) && (getDuration(i, i+1) < gbSlumberResponseThreshold))
+                    if (isPMACK(i-1) || isPMNAK(i-1))
                     {
-                        // allow Device responses ACK/NAK whthin gbSlumberResponseThreshold (ns)
+                        var iRequestStartTime = getStartTime(i);
+                        var iResponseEndTime = getEndTime(i-1);
+                        
+                        log("BBB:" +getClaim(i) + ":" + iResponseEndTime + ":" + iRequestStartTime);
+                        
+                        // ex. Order Primitive  StartTime  EndTime
+                        //         1    PM_REQ          0       10
+                        //         2     PMACK         15       40
+                        //         3    PM_REQ         30       40 
+                        if (iResponseEndTime >= iRequestStartTime)
+                        {
+                            bTempFail = false;
+                        }
                     }
-                    else
+                    
+                    if ((i+1) < giPAIndex)
                     {
-                        setDrawError(i+1, "Host 打 Slumber 之後過了 " + gbSlumberResponseThreshold + "ns , Device 並沒有接著回 ACK/NAK");
+                        if (isSlumber(i+1) && (getDuration(i, i+1) < gbSlumberResponseThreshold))
+                        {
+                            // allow Device responses ACK/NAK whthin gbSlumberResponseThreshold (ns)
+                        }
+                        else
+                        {
+                            setDrawError(i+1, "Host 打 Slumber 之後過了 " + gbSlumberResponseThreshold + "ns , Device 並沒有接著回 ACK/NAK");
+                        }
                     }
                 }
 
-                if (bTempFail)
+                if (bValidSlumber)
                 {
-                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_8, iSlumberIdx);
+                    if (bTempFail)
+                    {
+                        setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_8, iSlumberIdx);
+                        
+                        log("AAAA:" + getClaim(iSlumberIdx) + ":" + getClaim(i));
+                    }
+                    else
+                    {
+                        setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_8, iSlumberIdx);
+                    }
                 }
                     
                 bPartial = false;
@@ -1129,6 +1280,7 @@ function buildCSV()
             
             if (bNCQ)
             {
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_6, i);
                 for (var j = 0; j < 32; j++)
                 {
                     if (iNCQIdx[j] >= 0)
@@ -1139,6 +1291,31 @@ function buildCSV()
                     }
                 }
                 bNCQ = false;
+                
+                var bPass = false;
+                
+                // step 1. check Error D2H FIS
+                if (isDeviceFIS(i+1) && isD2HFIS(i+1) && (getError(i) == 0x4 && getStatus(i) == 0x51))
+                {
+                    for (var j = i+2; j < (i+10) && j < giPAIndex; j++)
+                    {
+                        // step 2. check Finished SDB FIS
+                        if (isDeviceFIS(j) && isSDBFIS(j) && (getError(j) == 0x0 && getSActiveHex(j) == "FFFFFFFF"))
+                        {
+                            bPass = false;
+                            break;
+                        }
+                    }
+                }
+                
+                if (bPass)
+                {
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_6, i);
+                }
+                else
+                {
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_6, i);
+                }
             }
             
             if (isNOP(i))

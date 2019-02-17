@@ -143,7 +143,7 @@ function initCheckList()
     gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_4] = "如果 Cmd FIS 被 PA 檢查出 Error , 那 Device 不須回應 D2H/SDB FIS";
     gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_5] = "如果 Cmd FIS 的 C-bit=0 , 那 Device 不須回應 D2H/SDB FIS";
     
-    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_6] = "如果 NCQ cmd 還沒完成前就收到 non-NCQ cmd , device 應回應帶 Error 的 D2H FIS (STATUS=0x41 , ERROR=0x4) , 並傳出結束所有 NCQ cmd 的 SDB FIS (SACTIVE=0xFFFFFFFF)"; // NCQ-03
+    gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_6] = "如果 NCQ cmd 還沒完成前就收到 non-NCQ cmd , device 應回應帶 Error 的 D2H FIS (STATUS=0x51 , ERROR=0x4) , 並傳出結束所有 NCQ cmd 的 SDB FIS (SACTIVE=0xFFFFFFFF)"; // NCQ-03
     gaaFISCheck[CHECK_LOGO][CHECK_NCQ_ERR_HANDLE_IDX_6] = "NCQ-03";
     gaaFISCheck[CHECK_TEXT][CHECK_NCQ_ERR_HANDLE_IDX_7] = "如果 NCQ cmd 還沒完成前就收到同個 TAG 的 NCQ cmd , device 應回應帶 Error 的 D2H FIS (STATUS=0x41 , ERROR=0x4 , I=0x1) , 並傳出結束所有 NCQ cmd 的 SDB FIS (SACTIVE=0xFFFFFFFF)"; // NCQ-04
     gaaFISCheck[CHECK_LOGO][CHECK_NCQ_ERR_HANDLE_IDX_7] = "NCQ-04";
