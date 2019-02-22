@@ -135,6 +135,56 @@ function parseFIS(asLineToken, iTextLineIdx)
     giPAIndex++;
 }
 
+
+function parseOther(asLineToken, iTextLineIdx)
+{
+    //  Port: I1
+    //  Start time: 2231.667133
+    //  Device Sleep/Power Disable..............0(H)
+    //  Duration Time: 0.000053
+
+    initPA(giPAIndex, TYPE_OTHER, giOtherIndex, asLineToken[iTextLineIdx]);
+    initOther(giOtherIndex);
+
+    log("No." + giPAIndex + " PA - " + "NO." + giOtherIndex + " Other");
+
+    for (var j = iTextLineIdx + 2; j < asLineToken.length; j++)
+    {
+        var asTemp = asLineToken[j].split(/\./);
+
+        for (var k = 0; k < IDX_OTHER_AMOUNT; k++)
+        {
+            if (asTemp[0].indexOf("Device Sleep") == 0)
+            {
+                gaasOtherSeq[giOtherIndex][IDX_OTHER_TYPE] = asTemp[0];
+                gaasOtherSeq[giOtherIndex][IDX_OTHER_VALUE] = asTemp[1];
+                log("match " + giOtherIndex + " : " + gaasOtherSeq[giOtherIndex][IDX_OTHER_TYPE] + "," + gaasOtherSeq[giOtherIndex][IDX_OTHER_VALUE]);
+            }
+        }
+        
+        asTemp = asLineToken[j].split(/:/);
+        
+        for (var k = 0; k < IDX_INFO_AMOUNT; k++)
+        {
+            if (asTemp[0].indexOf(TAG_INFO[k][0]) == 0)
+            {
+                var iAdditionIdx = IDX_OTHER_AMOUNT + TAG_INFO[k][1];
+                gaasOtherSeq[giOtherIndex][iAdditionIdx] = asTemp[1];
+                
+                log("match " + TAG_INFO[k][0] + " : " + iAdditionIdx + "," + gaasOtherSeq[giOtherIndex][iAdditionIdx]);
+            }
+        }
+        
+        if (asTemp[0].indexOf("_____________________________________________________________") == 0)
+        {
+            break; // the last line for this Other
+        }   
+    }
+    
+    giOtherIndex++;
+    giPAIndex++;
+}
+
 function parseOOB(asLineToken, iTextLineIdx)
 {
     // Port: T1
@@ -524,16 +574,24 @@ function parseSequence()
         }
         else if (asToken[i].indexOf(S_LINK) == 0)
         {            
+            
             if (asToken[i + 4].indexOf(S_OOB_TYPE) == 0)
             {
                 parseOOB(asToken, i);
             }
+            else if (isOtherType(asToken[i + 4]))
+            {
+                log("CHECK3:" + asToken[i+4]);
+                parseOther(asToken, i);
+            }
             else if (isPrimitiveType(asToken[i + 4]))
             {
+                log("CHECK1:" + asToken[i+4]);
                 parsePrimitive(asToken, i);
             }
             else if (isMultiPrimitiveType(asToken, i))
             {
+                log("CHECK2:" + asToken[i+4]);
                 parseMultiPrimitive(asToken, i);
             }
         }
@@ -627,6 +685,9 @@ function buildCSV()
     var iPrevPartialGen = 0;
     var iPrevSlumberGen = 0;
     
+    var iDeviceSleep = -1; // 1: enable DEVSLP , 0: disable DEVSLP
+    var iErrCominitIndex = 0;
+    
     for (var i = 0; i < 32; i++)
     {
         iNCQIdx[i] = -1;
@@ -656,6 +717,11 @@ function buildCSV()
                 setCheckInfo(CHECK_TOTAL_TRACE, CHECK_D2H_FIS_IDX_0, i);
                 setCheckInfo(CHECK_TOTAL_TRACE, CHECK_OOB_IDX_0, i);
                 
+                if (iDeviceSleep == 0)
+                {
+                    setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_10, i);
+                }
+                
                 if (isDeviceOOB(i+1) && isCominit(i+1))
                 {
                     var iTempDuration = getDurationUS(i, i+1);
@@ -666,16 +732,27 @@ function buildCSV()
                     if (iTempDuration < (10 * 1000))
                     {
                         setCheckInfo(CHECK_PASS_TRACE, CHECK_OOB_IDX_0, iCRSTIdx);
+                        
+                        if (iDeviceSleep == 0)
+                        {
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_10, iCRSTIdx);
+                        }
                     }
                     else
                     {
                         setCheckInfo(CHECK_FAIL_TRACE, CHECK_OOB_IDX_0, iCRSTIdx);
+                        
+                        if (iDeviceSleep == 0)
+                        {
+                            setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_10, iCRSTIdx);
+                        }
                     }
                 }
                 else if ((i+1) < giPAIndex)
                 {
                     setDrawError(i+1, "Host 發 COMRSET 之後 , 不是 Device 回 COMINIT");
                 }
+
                 
                 bCRST = true;
                 
@@ -793,6 +870,12 @@ function buildCSV()
                 {
                     setCheckInfo(CHECK_PASS_TRACE, CHECK_OOB_IDX_1, i);   
                 }
+            }
+            
+            if (iDeviceSleep == 1)
+            {
+                // Device should not send COMINIT after DEVSLP enable
+                iErrCominitIndex = i;
             }
         }
         else if (isHostPrimitive(i))
@@ -1490,6 +1573,32 @@ function buildCSV()
             else
             {
                 setDrawError(i, " 這個 D2H FIS 之前沒有 non-NCQ cmd 也沒有 COMRESET");
+            }
+        }
+        else if (isHostOther(i))
+        {
+            if (isDeviceSleepEnable(i))
+            {
+                log("DEVSLP EN:" + getClaim(i));
+                
+                iDeviceSleep = 1;
+                
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_LPM_IDX_9, iProtocolErrorIdx);
+            }
+            else if (isDeviceSleepDisable(i))
+            {
+                log("DEVSLP DIS:" + getClaim(i));
+                
+                iDeviceSleep = 0;
+                
+                if (iErrCominitIndex > 0)
+                {
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_LPM_IDX_9, iErrCominitIndex);
+                }
+                else
+                {
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_LPM_IDX_9, i);
+                }
             }
         }
         

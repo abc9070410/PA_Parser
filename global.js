@@ -261,6 +261,19 @@ var giOOBIndex = 0;
 var gaasOOBSeq = [];                // sequence of OOB
 
 
+var IDX_OTHER_TYPE = 0;
+var IDX_OTHER_VALUE = 1;
+var IDX_OTHER_AMOUNT = 2;
+
+var TAG_OTHER = [
+    ["", IDX_OTHER_TYPE],
+    ["", IDX_OTHER_VALUE]
+];
+
+var giOtherIndex = 0;
+var gaasOtherSeq = [];                // sequence of Other
+
+
 
 var IDX_PRIMITIVE_SENDER = 0;
 var IDX_PRIMITIVE_TYPE = 1;
@@ -302,6 +315,8 @@ var TYPE_FIS = 2;
 var TYPE_PRIMITIVE = 3;
 var TYPE_MULTI_PRIMITIVE = 4;
 var TYPE_OOB = 5;
+var TYPE_OTHER = 6;
+var TYPE_AMOUNT = 7;
 
 var IDX_PA_TYPE = 0;    // include TYPE_CMD, TYPE_FIS, TYPE_PRIMITIVE and TYPE_OOB
 var IDX_PA_NO = 1;      // order no in specific sequence

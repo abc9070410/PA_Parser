@@ -937,6 +937,11 @@ function isWakeupFromSlumber(i)
     return (iDuration > 10000) && (iDuration < 1000000);
 }
 
+function isOtherType(str)
+{
+    return (str.indexOf("Device Sleep") >= 0);
+}
+
 function isPrimitiveType(str)
 {
     return (str.indexOf("Host") >= 0 ||
@@ -969,6 +974,20 @@ function isLegalPAIdx(i)
 {
     return (i >= 0 && i < giPAIndex);
 }
+
+
+
+function isOther(i)
+{
+    return isLegalPAIdx(i) && gaasPASeq[i][IDX_PA_TYPE] == TYPE_OTHER;
+}
+
+function isHostOther(i)
+{
+    return isOther(i) &&
+           gaasOtherSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OTHER_AMOUNT + IDX_INFO_PORT].indexOf("I1") >= 0;
+}
+
 
 function isOOB(i)
 {
@@ -1062,6 +1081,36 @@ function getPrimitiveCnt(i)
     err(sTemp + ":" + iStart + "," + iEnd + "->" + sNum);
     
     return getNumber(sNum);
+}
+
+function isDeviceSleep(i)
+{
+    if (isLegalPAIdx(i) && 
+            gaasPASeq[i][IDX_PA_TYPE] == TYPE_OTHER &&
+            gaasOtherSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OTHER_TYPE].indexOf("Device Sleep") >= 0)
+    {
+    log("IDX_OTHER_VALUE:" + gaasOtherSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OTHER_VALUE]);
+    
+    return true;
+    }
+    
+    return false;
+}
+
+function isDeviceSleepEnable(i)
+{
+    return isLegalPAIdx(i) && 
+            gaasPASeq[i][IDX_PA_TYPE] == TYPE_OTHER &&
+            gaasOtherSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OTHER_TYPE].indexOf("Device Sleep") >= 0 &&
+            gaasOtherSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OTHER_VALUE].indexOf("1") >= 0;
+}
+
+function isDeviceSleepDisable(i)
+{
+    return isLegalPAIdx(i) && 
+            gaasPASeq[i][IDX_PA_TYPE] == TYPE_OTHER &&
+            gaasOtherSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OTHER_TYPE].indexOf("Device Sleep") >= 0 &&
+            gaasOtherSeq[gaasPASeq[i][IDX_PA_NO]][IDX_OTHER_VALUE].indexOf("0") >= 0;
 }
 
 function isPartial(i)
@@ -1662,6 +1711,16 @@ function initOOB(i)
     }
 }
 
+function initOther(i)
+{
+    gaasOtherSeq[i] = [];
+    
+    for (var j = 0; j < IDX_INFO_AMOUNT + IDX_OTHER_AMOUNT; j++)
+    {
+        gaasOtherSeq[i][j] = "";
+    }
+}
+
 function initFIS(i)
 {
     gaasFISSeq[i] = [];
@@ -1697,7 +1756,10 @@ function initPA(i, iSpecificType, iSpecificIdx, sLine)
         sClaimType = "ATA Cmd.";
     else if (iSpecificType == TYPE_FIS)
         sClaimType = "Transport";
-    else if (iSpecificType == TYPE_PRIMITIVE || iSpecificType == TYPE_MULTI_PRIMITIVE || iSpecificType == TYPE_OOB)
+    else if (iSpecificType == TYPE_PRIMITIVE || 
+             iSpecificType == TYPE_MULTI_PRIMITIVE || 
+             iSpecificType == TYPE_OOB ||
+             iSpecificType == TYPE_OTHER)
         sClaimType = "Link";
     else 
         sClaimType = "NONE";
