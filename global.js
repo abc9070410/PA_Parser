@@ -381,8 +381,8 @@ var gaiPartialDrawQueue = [];
 var gaiPartialDrawCnt = [];
 var gaaPartialColorQueue = [
     ["reply other for Partial", I_PARTIAL_TYPE_OTHER, "Khaki"], 
-    ["reply ACK for Partial", I_PARTIAL_TYPE_ACK, "YellowGreen"],
-    ["reply NAK for Partial", I_PARTIAL_TYPE_NAK, "RoyalBlue"]
+    ["reply ACK for Partial", I_PARTIAL_TYPE_ACK, "RoyalBlue"],
+    ["reply NAK for Partial", I_PARTIAL_TYPE_NAK, "YellowGreen"]
     ];
     
 var I_SLUMBER_TYPE_OTHER = 0;
@@ -393,8 +393,8 @@ var gaiSlumberDrawQueue = [];
 var gaiSlumberDrawCnt = [];
 var gaaSlumberColorQueue = [
     ["reply other for Slumber", I_SLUMBER_TYPE_OTHER, "Khaki"], 
-    ["reply ACK for Slumber", I_SLUMBER_TYPE_ACK, "YellowGreen"],
-    ["reply NAK for Slumber", I_SLUMBER_TYPE_NAK, "RoyalBlue"]
+    ["reply ACK for Slumber", I_SLUMBER_TYPE_ACK, "RoyalBlue"],
+    ["reply NAK for Slumber", I_SLUMBER_TYPE_NAK, "YellowGreen"]
     ];
     
 var I_COMWAKE_TYPE_OTHER = 0;
@@ -431,7 +431,7 @@ var gsErrorCSV = "\ufeff編號,錯誤地點,錯誤類別,錯誤原因,錯誤描�
 var gsTempError = "";
 
 var giCheckCSVIdx = 0;
-var gsCheckCSV = "\ufeff編號,檢查類別,LOGO項目,檢查項目,檢查結果,檢查次數,通過次數,檢查描述,錯誤地點,正確地點,所有地點\n";
+var gsCheckCSV = "\ufeff編號,檢查類別,是否SPEC規定,檢查項目,檢查結果,檢查次數,通過次數,檢查描述,錯誤地點,正確地點,所有地點\n";
 
 var giVerifyCSVIdx = 0;
 var gsVerifyCSV = "\ufeff編號,驗證類別,驗證項目,驗證結果,驗證描述\n";
@@ -544,7 +544,7 @@ var CHECK_DETAIL = 4;
 var CHECK_FAIL_TRACE = 5;
 var CHECK_PASS_TRACE = 6;
 var CHECK_TOTAL_TRACE = 7;
-var CHECK_LOGO = 8;
+var CHECK_FOLLOW_SPEC = 8;
 var CHECK_AMOUNT = 9;
 var gaaFISCheck = [];
 

@@ -373,9 +373,16 @@ function drawSVG(sDrawID, iCSVIdx)
             var sInfo = getPAInfo(gaaiCSVPAIdx[iCSVIdx][iNo]) + "<br/>" +
                         getClaimType(gaaiCSVPAIdx[iCSVIdx][iNo]) + iNo + "<br/>" +
                         iTime + sUnit;
+                        
+            var iLeftPx = d3.event.pageX;
+            
+            if (iNo > (giPAIndex / 2))
+            {
+                iLeftPx -= 150;
+            }
 
             div	.html(sInfo)	
-                .style("left", (d3.event.pageX) + "px")		
+                .style("left", iLeftPx + "px")		
                 .style("top", (d3.event.pageY - 28) + "px");	
             })					
         .on("mouseout", function(d) {

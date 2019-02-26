@@ -688,6 +688,8 @@ function buildCSV()
     var iDeviceSleep = -1; // 1: enable DEVSLP , 0: disable DEVSLP
     var iErrCominitIndex = 0;
     
+    var iNowNCQTag = 0;
+    
     for (var i = 0; i < 32; i++)
     {
         iNCQIdx[i] = -1;
@@ -1159,6 +1161,8 @@ function buildCSV()
             bPIOCmd = false;
             bNonDataCmd = false;
             
+            setCheckInfo(CHECK_TOTAL_TRACE, CHECK_D2H_FIS_IDX_2, iCRSTIdx);
+            
             if (isDataOutCmd(i))
             {
                 bWrite = true;
@@ -1185,8 +1189,10 @@ function buildCSV()
             {
                 setDrawError(i, ": COMRESET 之後還沒收到 D2H FIS , 就先送出 NCQ cmd");
             }
-            
+
             var iTag = getNCQTag(i);
+            
+            iNowNCQTag = iTag;
             
             if (iNCQIdx[iTag] == -1)
             {
@@ -1565,10 +1571,37 @@ function buildCSV()
                 {
                     setCheckInfo(CHECK_FAIL_TRACE, CHECK_D2H_FIS_IDX_0, iCRSTIdx);
                 }
+                
+                
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_D2H_FIS_IDX_1, iCRSTIdx);
+                
+                var iSectorCnt = getSectorCnt(i);
+                var iStatus = getStatus(i);
+                var iError = getError(i);
+                
+                if (iSectorCnt == 1 && iError == 1 && iStatus == 0x50)
+                {
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_D2H_FIS_IDX_1, iCRSTIdx);
+                }
+                else
+                {
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_D2H_FIS_IDX_1, iCRSTIdx);
+                }
             }
             else if (bNCQ)
             {
                 // D2H FIS for NCQ cmd
+                
+                var iUS = getDurationUS(iNCQIdx[iNowNCQTag], i);
+                
+                if (iUS < 1000)
+                {
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_D2H_FIS_IDX_2, iCRSTIdx);
+                }
+                else
+                {
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_D2H_FIS_IDX_2, iCRSTIdx);
+                }
             }
             else
             {

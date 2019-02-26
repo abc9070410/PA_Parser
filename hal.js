@@ -1877,7 +1877,7 @@ function buildCheckCSV()
             var bPass = gaaFISCheck[CHECK_TOTAL_CNT][iBase + i] == gaaFISCheck[CHECK_PASS_CNT][iBase + i];
             
             addCheckCSV(sNo, sType, 
-                gaaFISCheck[CHECK_LOGO][iBase + i],
+                gaaFISCheck[CHECK_FOLLOW_SPEC][iBase + i],
                 gaaFISCheck[CHECK_TEXT][iBase + i], bPass, 
                 gaaFISCheck[CHECK_TOTAL_CNT][iBase + i], gaaFISCheck[CHECK_PASS_CNT][iBase + i],
                 gaaFISCheck[CHECK_DETAIL][iBase + i], 
