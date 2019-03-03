@@ -690,6 +690,13 @@ function buildCSV()
     
     var iNowNCQTag = 0;
     
+    var bAutoActivate = false;
+    
+    var bSetMultiple = false;
+    var bDoingRW = false;
+    var iActualDataFISCnt = 0;
+    var iExpectDataFISCnt = 0;
+
     for (var i = 0; i < 32; i++)
     {
         iNCQIdx[i] = -1;
@@ -1155,6 +1162,24 @@ function buildCSV()
         }
         else if (isNCQ(i))
         {
+            var iTag = getNCQTag(i);
+            
+            if (bNCQ && iNowNCQTag == iTag) // exist two NCQ cmds with same tag
+            {
+                setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_7, i);
+                
+                if (isErrorNCQHandle(i))
+                {
+                    setCheckInfo(CHECK_PASS_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_7, i);
+                }
+                else
+                {
+                    setCheckInfo(CHECK_FAIL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_7, i);
+                }
+            }
+            
+            iNowNCQTag = iTag;
+            
             bNCQ = true;
             
             bDMACmd = true;
@@ -1189,10 +1214,6 @@ function buildCSV()
             {
                 setDrawError(i, ": COMRESET 之後還沒收到 D2H FIS , 就先送出 NCQ cmd");
             }
-
-            var iTag = getNCQTag(i);
-            
-            iNowNCQTag = iTag;
             
             if (iNCQIdx[iTag] == -1)
             {
@@ -1369,7 +1390,10 @@ function buildCSV()
             
             if (bNCQ)
             {
+                bNCQ = false;
+                
                 setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_6, i);
+                
                 for (var j = 0; j < 32; j++)
                 {
                     if (iNCQIdx[j] >= 0)
@@ -1379,25 +1403,8 @@ function buildCSV()
                         setDrawError(i, "在此之前 , " + getClaim(iNCQIdx[j]) + " 沒有相對應的 SDB FIS");
                     }
                 }
-                bNCQ = false;
                 
-                var bPass = false;
-                
-                // step 1. check Error D2H FIS
-                if (isDeviceFIS(i+1) && isD2HFIS(i+1) && (getError(i) == 0x4 && getStatus(i) == 0x51))
-                {
-                    for (var j = i+2; j < (i+10) && j < giPAIndex; j++)
-                    {
-                        // step 2. check Finished SDB FIS
-                        if (isDeviceFIS(j) && isSDBFIS(j) && (getError(j) == 0x0 && getSActiveHex(j) == "FFFFFFFF"))
-                        {
-                            bPass = false;
-                            break;
-                        }
-                    }
-                }
-                
-                if (bPass)
+                if (isErrorNCQHandle(i))
                 {
                     setCheckInfo(CHECK_PASS_TRACE, CHECK_NCQ_ERR_HANDLE_IDX_6, i);
                 }
@@ -1416,8 +1423,6 @@ function buildCSV()
                 setDrawError(i, " is illegal cause C bit is 0");
                 
                 setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_5, i);
-                
-                //err("sCheckClaim:" + gaaFISCheck[CHECK_TOTAL_TRACE][CHECK_NON_NCQ_ERR_HANDLE_IDX_5]);
                 
                 if (!isD2HFIS(i+1))
                 {
@@ -1710,6 +1715,87 @@ function buildCSV()
                         {
                             setCheckInfo(CHECK_TOTAL_TRACE, CHECK_NON_NCQ_ERR_HANDLE_IDX_3, iProtocolErrorIdx);
                         }
+                    }
+                }
+            }
+            else
+            {
+                if (isEnableAutoActivate(i))
+                {
+                    bAutoActivate = true;
+                    
+                    setCheckInfo(CHECK_TOTAL_TRACE, CHECK_OTHER_IDX_0, iProtocolErrorIdx);
+                }
+                else if (isDisableAutoActivate(i))
+                {
+                    bAutoActivate = false;
+                }
+                
+                if (isDMASetupFIS(i))
+                {
+                    if (isDMAActivateFIS(i+1))
+                    {
+                        if (bAutoActivate)
+                        {
+                            setCheckInfo(CHECK_FAIL_TRACE, CHECK_OTHER_IDX_0, iProtocolErrorIdx);
+                        }
+                    }
+                    else 
+                    {
+                        if (bAutoActivate)
+                        {
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_OTHER_IDX_0, iProtocolErrorIdx);
+                        }
+                    }
+                }
+                
+
+                if (isSetMultiple(i))
+                {
+                    iMultipleCnt = getSectorCnt(i);
+
+                    bSetMultiple = true;
+                }
+                
+                if (isReadWriteMultiple(i))
+                {
+                    if (bSetMultiple)
+                    {
+                        iExpectDataFISCnt = Math.ceil(getSectorCnt(i) / iMultipleCnt);
+                        bDoingRW = true;
+                        
+                        setCheckInfo(CHECK_TOTAL_TRACE, CHECK_OTHER_IDX_1, i);
+                    }
+                    else
+                    {
+                        setFailInfo(i, "尚未做 Set Multiple 就做 Read/Write Multiple");
+                    }
+                }
+                
+                if (bDoingRW)
+                {
+                    if (isDataFIS(i))
+                    {
+                        iActualDataFISCnt++;
+                    }
+                    else if (isPIOSetupFIS(i))
+                    {
+                    }
+                    else // D2H FIS or other cmd FIS, indicate transfer done
+                    {
+                        if (iActualDataFISCnt != iExpectDataFISCnt)
+                        {
+                            setFailInfo(i, "要求傳 " + (iDataSectCnt / 2) + "KB , 預期有 " + iExpectDataFISCnt + " 個 Data FIS , 但卻只有 " + iActualDataFISCnt + " 個");
+                            
+                            setCheckInfo(CHECK_FAIL_TRACE, CHECK_OTHER_IDX_1, i);
+                        }
+                        else
+                        {
+                            setCheckInfo(CHECK_PASS_TRACE, CHECK_OTHER_IDX_1, i);
+                        }
+                    
+                        bDoingRW = false;
+                        iActualDataFISCnt = 0;
                     }
                 }
             }

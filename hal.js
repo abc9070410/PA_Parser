@@ -897,6 +897,28 @@ function isErrorResponse(i)
     return false;
 }
 
+function isErrorNCQHandle(i)
+{
+    var bPass = false;
+    
+    // step 1. check Error D2H FIS
+    if (isDeviceFIS(i+1) && isD2HFIS(i+1) && (getError(i) == 0x4 && getStatus(i) == 0x51))
+    {
+        for (var j = i+2; j < (i+10) && j < giPAIndex; j++)
+        {
+            // step 2. check Finished SDB FIS
+            if (isDeviceFIS(j) && isSDBFIS(j) && (getError(j) == 0x0 && getSActiveHex(j) == "FFFFFFFF"))
+            {
+                bPass = true;
+                break;
+            }
+        }
+    }
+    
+    return bPass;
+}
+
+
 function getFeature(i)
 {
     if (gaasPASeq[i][IDX_PA_TYPE] != TYPE_FIS)   
